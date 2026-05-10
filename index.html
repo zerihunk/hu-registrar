@@ -1,0 +1,196 @@
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+import {
+  getFirestore, collection, getDocs, addDoc,
+  updateDoc, deleteDoc, doc, onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+/* 🔥 CONFIG */
+const firebaseConfig = {
+  apiKey: "YOUR_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* 🔥 GLOBAL STATE */
+let config = { services: [], roles: [], rooms: [] };
+let users = [];
+let reqs = [];
+let currentUser = null;
+
+const notes = ["File not found","File incomplete","Payment not cleared"];
+
+/* 🔐 LOGIN */
+window.doLogin = async () => {
+  const email = lUser.value;
+  const pass = lPass.value;
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch(e){ alert(e.message); }
+};
+
+window.logout = () => signOut(auth);
+
+/* 🔁 AUTH STATE */
+onAuthStateChanged(auth, async (user)=>{
+  if(user){
+    document.getElementById('loginScreen').style.display='none';
+
+    // load user profile
+    const snap = await getDocs(collection(db,"users"));
+    users = snap.docs.map(d=>({id:d.id,...d.data()}));
+    currentUser = users.find(u=>u.email===user.email);
+
+    if(!currentUser){
+      alert("User not registered in system!");
+      return;
+    }
+
+    loadAll();
+  } else {
+    document.getElementById('loginScreen').style.display='flex';
+  }
+});
+
+/* 🔥 LOAD EVERYTHING */
+async function loadAll(){
+
+  // config
+  const cfg = await getDocs(collection(db,"config"));
+  config = cfg.docs[0]?.data() || config;
+
+  // users
+  const us = await getDocs(collection(db,"users"));
+  users = us.docs.map(d=>({id:d.id,...d.data()}));
+
+  // requests realtime
+  onSnapshot(collection(db,"requests"), snap=>{
+    reqs = snap.docs.map(d=>({id:d.id,...d.data()}));
+    render();
+  });
+}
+
+/* ➕ ADD REQUEST */
+window.saveNewReq = async () => {
+  if(!inName.value) return alert("Missing!");
+
+  await addDoc(collection(db,"requests"),{
+    name: inName.value.toUpperCase(),
+    dept: inDept.value,
+    deg: inDeg.value,
+    mod: inMod.value,
+    date: inDate.value,
+    servs: [...tmpS],
+    step: config.roles[0],
+    room: config.rooms[0],
+    history:[{
+      step:"Registered",
+      by:currentUser.name,
+      time:new Date().toLocaleString()
+    }]
+  });
+
+  tmpS=[];
+};
+
+/* 🔄 PROCESS STEP */
+window.confirmForward = async (i,s,r)=>{
+  const ref = doc(db,"requests",reqs[i].id);
+
+  await updateDoc(ref,{
+    step:s,
+    room:r,
+    history:[
+      ...reqs[i].history,
+      {
+        step:s,
+        by:currentUser.name,
+        time:new Date().toLocaleString(),
+        note: document.getElementById('nt').value
+      }
+    ]
+  });
+
+  closeModal();
+};
+
+/* ❌ DELETE */
+window.delReq = async (i)=>{
+  if(confirm("Delete?")){
+    await deleteDoc(doc(db,"requests",reqs[i].id));
+  }
+};
+
+/* 👥 ADD STAFF */
+window.saveStaff = async ()=>{
+  await addDoc(collection(db,"users"),{
+    name:uFull.value,
+    email:uId.value,
+    userRoles:[...tmpR],
+    office:uRoom.value,
+    isActive:true
+  });
+  tmpR=[];
+};
+
+/* 🔁 USER STATUS */
+window.toggleUserStatus = async (i)=>{
+  const ref = doc(db,"users",users[i].id);
+  await updateDoc(ref,{ isActive: !users[i].isActive });
+};
+
+/* 🗑 DELETE USER */
+window.delUser = async (i)=>{
+  await deleteDoc(doc(db,"users",users[i].id));
+};
+
+/* ⚙️ CONFIG */
+window.addSet = async (key,id)=>{
+  const v = document.getElementById(id).value;
+  if(!v) return;
+
+  config[key].push(v);
+
+  const cfgDoc = (await getDocs(collection(db,"config"))).docs[0];
+  await updateDoc(doc(db,"config",cfgDoc.id), config);
+
+  render();
+};
+
+/* 🎯 RENDER (UNCHANGED LOGIC) */
+window.render = ()=>{
+  if(!currentUser) return;
+
+  document.getElementById('stTotal').innerText = reqs.length;
+  document.getElementById('stDone').innerText = reqs.filter(r=>r.step==="COMPLETE").length;
+
+  const isAdmin = currentUser.userRoles.includes("Admin");
+
+  document.getElementById('dashTable').innerHTML = reqs.map((r,i)=>{
+    const isDone = r.step==="COMPLETE";
+    const isMyTurn = isAdmin || currentUser.userRoles.includes(r.step);
+
+    return `<tr class="${isDone?'row-complete':''} ${!isMyTurn?'row-locked':''}">
+      <td>${r.name}</td>
+      <td>${r.dept}</td>
+      <td>${r.servs?.join(",")||""}</td>
+      <td>${r.step}</td>
+      <td>
+        ${isDone ? "Done" :
+        `<button onclick="processStep(${i})">Send</button>`}
+        ${isAdmin? `<button onclick="delReq(${i})">X</button>`:""}
+      </td>
+    </tr>`;
+  }).join('');
+};
+
+</script>
