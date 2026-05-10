@@ -3,51 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HU Registrar | Management System</title>
+    <title>HU Registrar | Advanced System</title>
     <style>
         :root { --primary: #1a252f; --accent: #3498db; --bg: #f4f7fa; --border: #e1e8ed; --danger: #e74c3c; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); height: 100vh; display: flex; overflow: hidden; }
         
+        /* Sidebar */
         .sidebar { width: 260px; background: var(--primary); color: white; display: flex; flex-direction: column; flex-shrink: 0; }
         .brand { padding: 25px; font-size: 1.3rem; font-weight: bold; color: var(--accent); border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; }
         .nav { padding: 15px 25px; cursor: pointer; color: #95a5a6; display: flex; align-items: center; gap: 12px; transition: 0.3s; }
         .nav:hover, .nav.active { color: white; background: rgba(255,255,255,0.1); border-left: 4px solid var(--accent); }
-        
         .admin-only, .staff-only { display: none; }
 
+        /* Main Content */
         .main { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
         .header { height: 70px; background: white; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
         .content { padding: 25px; overflow-y: auto; flex-grow: 1; }
 
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
-        table { width: 100%; border-collapse: collapse; background: white; }
+        table { width: 100%; border-collapse: collapse; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 0.85rem; }
-        th { background: #f8f9fa; color: #333; }
+        .student-name { color: var(--accent); cursor: pointer; font-weight: bold; text-decoration: underline; }
+
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 10000; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 500px; max-height: 80vh; overflow-y: auto; }
         
         input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; }
         button { padding: 12px 20px; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        
-        .badge { background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-        #loginOverlay { position: fixed; inset: 0; background: #1a252f; display: flex; align-items: center; justify-content: center; z-index: 9999; }
-        
+        .btn-close { background: #95a5a6; margin-top: 10px; width: 100%; }
+
         .view-section { display: none; }
         .view-section.active { display: block; }
-
-        /* System Config Styles */
-        .config-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }
-        .config-box { background: #f8f9fa; border: 1px solid var(--border); padding: 15px; border-radius: 8px; }
-        .config-box h4 { margin: 0 0 10px 0; color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 5px; }
-        .config-box ul { padding-left: 20px; margin: 0; font-size: 0.85rem; color: #555; }
+        .badge { background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="loginOverlay">
+    <div id="loginOverlay" style="position: fixed; inset: 0; background: #1a252f; display: flex; align-items: center; justify-content: center; z-index: 9999;">
         <div class="card" style="width: 350px; text-align: center;">
             <h2 style="color: var(--primary);">HU Registrar Login</h2>
             <input type="email" id="loginEmail" placeholder="Email Address">
             <input type="password" id="loginPass" placeholder="Password">
             <button style="width: 100%;" onclick="handleLogin()">Sign In</button>
+        </div>
+    </div>
+
+    <div id="studentModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalStudentName">Student Detail</h3>
+            <hr>
+            <h4>Workflow History</h4>
+            <div id="historyLog" style="font-size: 0.85rem; margin-bottom: 20px; background: #f9f9f9; padding: 10px; border-radius: 6px;"></div>
+            
+            <h4>Move To / Update Status</h4>
+            <label>Select Role (Next Step)</label>
+            <select id="moveRole"></select>
+            <label>Select Office/Room</label>
+            <select id="moveOffice"></select>
+            
+            <h4>Update Services</h4>
+            <div id="serviceCheckboxes" style="margin-bottom: 15px;"></div>
+            
+            <button onclick="saveStudentUpdate()" style="width: 100%;">Update & Move</button>
+            <button class="btn-close" onclick="closeModal()">Close</button>
         </div>
     </div>
 
@@ -67,62 +86,29 @@
                     <span id="userInfo" style="font-weight:bold;">User</span>
                     <span id="roleBadge" class="badge" style="margin-left: 10px;"></span>
                 </div>
-                <div style="color: green; font-weight: bold;">● Online</div>
             </div>
 
             <div class="content">
                 <div id="dashView" class="view-section active">
                     <div class="card">
-                        <h3>Student Workflow Tracker</h3>
+                        <h3>Live Student Tracker</h3>
                         <table id="studentTbl">
                             <thead>
-                                <tr><th>Name</th><th>Department</th><th>Service</th><th>Status</th><th>Log</th><th>Action</th></tr>
+                                <tr><th>Student Name</th><th>Dept</th><th>Status</th><th>Current Office</th><th>Services</th></tr>
                             </thead>
                             <tbody></tbody>
                         </table>
                     </div>
                 </div>
 
-                <div id="staffView" class="view-section">
-                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
-                        <div class="card">
-                            <h3>Add New Staff</h3>
-                            <label>Full Name</label><input type="text" id="stName">
-                            <label>Email</label><input type="email" id="stEmail">
-                            <label>Role</label><select id="stRole"></select>
-                            <label>Office</label><select id="stRoom"></select>
-                            <button onclick="registerStaff()" style="width:100%;">Save Staff Profile</button>
-                        </div>
-                        <div class="card">
-                            <h3>Active Staff List</h3>
-                            <table id="staffListTbl">
-                                <thead>
-                                    <tr><th>Name</th><th>Email</th><th>Role</th><th>Office</th></tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
                 <div id="regView" class="view-section">
                     <div class="card" style="max-width: 500px;">
                         <h3>New Student Registration</h3>
-                        <label>Full Name</label><input type="text" id="sName">
-                        <label>Department</label><select id="dropDept"></select>
-                        <label>Award Date</label><input type="date" id="sDate">
-                        <label>Modality</label><select id="dropModality"></select>
-                        <label>Service</label><select id="dropService"></select>
-                        <button onclick="registerStudent()" style="width:100%;">Submit Registration</button>
-                    </div>
-                </div>
-
-                <div id="sysView" class="view-section">
-                    <div class="card">
-                        <h3>System Master Data Configuration</h3>
-                        <p style="font-size: 0.9rem; color: #666;">View current active categories synchronized from Cloud Storage.</p>
-                        <div id="configGridContainer" class="config-grid">
-                            </div>
+                        <input type="text" id="sName" placeholder="Full Name">
+                        <select id="dropDept"></select>
+                        <select id="dropModality"></select>
+                        <div id="regServices"></div>
+                        <button onclick="registerStudent()">Register</button>
                     </div>
                 </div>
             </div>
@@ -131,7 +117,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getFirestore, doc, onSnapshot, getDocs, collection, addDoc, updateDoc, arrayUnion, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -147,169 +133,139 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        let currentUserRole = "";
+        let selectedStudentId = null;
+        let globalConfig = null;
 
+        // Auth Logic
         window.handleLogin = async () => {
             const email = document.getElementById('loginEmail').value;
             const pass = document.getElementById('loginPass').value;
-            try {
-                await signInWithEmailAndPassword(auth, email, pass);
-            } catch (err) {
-                if (pass === '123456') {
-                    const q = query(collection(db, "users"), where("email", "==", email));
-                    const snap = await getDocs(q);
-                    if (!snap.empty) {
-                        await createUserWithEmailAndPassword(auth, email, pass);
-                    } else { alert("User not registered in system."); }
-                } else { alert("Invalid credentials."); }
-            }
+            try { await signInWithEmailAndPassword(auth, email, pass); } catch (e) { alert("Login Failed"); }
         };
-
         window.handleLogout = () => signOut(auth);
 
-        onAuthStateChanged(auth, async (user) => {
+        onAuthStateChanged(auth, user => {
             if (user) {
-                document.getElementById('userInfo').innerText = user.email;
-                await syncPerms(user.email);
                 document.getElementById('loginOverlay').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'flex';
-                initSync();
+                initSync(user.email);
             } else {
                 document.getElementById('loginOverlay').style.display = 'flex';
                 document.getElementById('mainApp').style.display = 'none';
             }
         });
 
-        async function syncPerms(email) {
-            const q = query(collection(db, "users"), where("email", "==", email));
-            const snap = await getDocs(q);
-            if (!snap.empty) {
-                currentUserRole = snap.docs[0].data().userRoles[0];
-                document.getElementById('roleBadge').innerText = currentUserRole;
-                const isAdmin = currentUserRole === "Admin";
+        async function initSync(email) {
+            // Fetch User Role
+            const qU = query(collection(db, "users"), where("email", "==", email));
+            const userSnap = await getDocs(qU);
+            if (!userSnap.empty) {
+                const role = userSnap.docs[0].data().userRoles[0];
+                document.getElementById('roleBadge').innerText = role;
+                const isAdmin = role === "Admin";
                 document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? 'flex' : 'none');
                 document.querySelectorAll('.staff-only').forEach(el => el.style.display = 'flex');
             }
-        }
 
-        function initSync() {
-            // Students tracking
-            onSnapshot(query(collection(db, "students"), orderBy("createdAt", "desc")), (snap) => {
+            // Sync Config
+            onSnapshot(doc(db, "config", "general"), snap => {
+                if (snap.exists()) {
+                    globalConfig = snap.data();
+                    fillSelect('dropDept', globalConfig.departments);
+                    fillSelect('dropModality', globalConfig.studymodalitys);
+                    fillSelect('moveRole', globalConfig.roles);
+                    fillSelect('moveOffice', globalConfig.rooms);
+                    
+                    // Fill services for registration
+                    const sContainer = document.getElementById('regServices');
+                    sContainer.innerHTML = '<h4>Services</h4>';
+                    globalConfig.services.forEach(s => {
+                        sContainer.innerHTML += `<label><input type="checkbox" value="${s}" class="reg-svc"> ${s}</label><br>`;
+                    });
+                }
+            });
+
+            // Sync Students
+            onSnapshot(query(collection(db, "students"), orderBy("createdAt", "desc")), snap => {
                 const tbody = document.querySelector("#studentTbl tbody");
                 tbody.innerHTML = "";
                 snap.forEach(d => {
                     const s = d.data();
                     tbody.innerHTML += `<tr>
-                        <td><b>${s.name}</b></td>
-                        <td>${s.department || 'N/A'}</td>
-                        <td>${s.service}</td>
+                        <td class="student-name" onclick="openStudentModal('${d.id}')">${s.name}</td>
+                        <td>${s.department}</td>
                         <td><span class="badge">${s.currentStatus}</span></td>
-                        <td style="font-size:10px;">${s.history.map(h => `<div>${h.status} (${h.time})</div>`).join('')}</td>
-                        <td>
-                            <select onchange="updateWorkflow('${d.id}', this.value)">
-                                <option value="">Action...</option>
-                                <option value="Admission">Admission</option>
-                                <option value="Finance">Finance</option>
-                                <option value="Registrar">Registrar</option>
-                                <option value="Completed">Completed</option>
-                            </select>
-                        </td>
+                        <td>${s.currentOffice || 'N/A'}</td>
+                        <td style="font-size:10px;">${(s.services || []).join(', ')}</td>
                     </tr>`;
                 });
             });
-
-            // Staff Sync
-            if (currentUserRole === "Admin") {
-                onSnapshot(collection(db, "users"), (snap) => {
-                    const tbody = document.querySelector("#staffListTbl tbody");
-                    tbody.innerHTML = "";
-                    snap.forEach(d => {
-                        const u = d.data();
-                        tbody.innerHTML += `<tr><td>${u.name}</td><td>${u.email}</td><td>${u.userRoles[0]}</td><td>${u.office}</td></tr>`;
-                    });
-                });
-            }
-
-            // Global Config Sync
-            onSnapshot(doc(db, "config", "general"), (snap) => {
-                if (snap.exists()) {
-                    const d = snap.data();
-                    
-                    // Fill dropdowns
-                    const fill = (id, arr) => {
-                        const el = document.getElementById(id);
-                        if(el && arr) el.innerHTML = arr.map(x => `<option>${x}</option>`).join('');
-                    };
-                    fill('dropModality', d.studymodalitys);
-                    fill('dropService', d.services);
-                    fill('dropDept', d.departments);
-                    fill('stRole', d.roles);
-                    fill('stRoom', d.rooms);
-
-                    // Render System Config View
-                    const container = document.getElementById('configGridContainer');
-                    const sections = [
-                        {title: "Departments", data: d.departments},
-                        {title: "Services", data: d.services},
-                        {title: "Study Modality", data: d.studymodalitys},
-                        {title: "System Roles", data: d.roles},
-                        {title: "Offices/Rooms", data: d.rooms}
-                    ];
-
-                    container.innerHTML = sections.map(s => `
-                        <div class="config-box">
-                            <h4>${s.title}</h4>
-                            <ul>${s.data ? s.data.map(item => `<li>${item}</li>`).join('') : '<li>No data</li>'}</ul>
-                        </div>
-                    `).join('');
-                }
-            });
         }
 
-        window.registerStaff = async () => {
-            const name = document.getElementById('stName').value;
-            const email = document.getElementById('stEmail').value;
-            if(!name || !email) return alert("Fields cannot be empty");
+        window.openStudentModal = async (id) => {
+            selectedStudentId = id;
+            const snap = await getDocs(query(collection(db, "students")));
+            const student = snap.docs.find(d => d.id === id).data();
             
-            await addDoc(collection(db, "users"), {
-                name: name,
-                email: email,
-                userRoles: [document.getElementById('stRole').value],
-                office: document.getElementById('stRoom').value
+            document.getElementById('modalStudentName').innerText = student.name;
+            document.getElementById('historyLog').innerHTML = student.history.map(h => `<div><b>${h.status}</b>: ${h.office || ''} (${h.time})</div>`).join('');
+            
+            // Build service checkboxes
+            const svcDiv = document.getElementById('serviceCheckboxes');
+            svcDiv.innerHTML = "";
+            globalConfig.services.forEach(s => {
+                const checked = student.services && student.services.includes(s) ? 'checked' : '';
+                svcDiv.innerHTML += `<label><input type="checkbox" value="${s}" class="modal-svc" ${checked}> ${s}</label><br>`;
             });
-            alert("Staff Profile Created Successfully");
+
+            document.getElementById('studentModal').style.display = 'flex';
         };
 
-        window.updateWorkflow = async (id, next) => {
-            if(!next) return;
-            await updateDoc(doc(db, "students", id), {
-                currentStatus: next,
-                history: arrayUnion({ status: next, time: new Date().toLocaleString(), user: auth.currentUser.email })
+        window.saveStudentUpdate = async () => {
+            const nextStatus = document.getElementById('moveRole').value;
+            const nextOffice = document.getElementById('moveOffice').value;
+            const selectedServices = Array.from(document.querySelectorAll('.modal-svc:checked')).map(el => el.value);
+
+            await updateDoc(doc(db, "students", selectedStudentId), {
+                currentStatus: nextStatus,
+                currentOffice: nextOffice,
+                services: selectedServices,
+                history: arrayUnion({
+                    status: nextStatus,
+                    office: nextOffice,
+                    time: new Date().toLocaleString(),
+                    user: auth.currentUser.email
+                })
             });
+            alert("Updated Successfully!");
+            closeModal();
         };
 
         window.registerStudent = async () => {
-            const name = document.getElementById('sName').value;
-            if(!name) return alert("Enter Student Name");
-
+            const svcs = Array.from(document.querySelectorAll('.reg-svc:checked')).map(el => el.value);
             await addDoc(collection(db, "students"), {
-                name: name,
+                name: document.getElementById('sName').value,
                 department: document.getElementById('dropDept').value,
-                service: document.getElementById('dropService').value,
                 modality: document.getElementById('dropModality').value,
+                services: svcs,
                 currentStatus: "Registered",
+                currentOffice: "Admission",
                 createdAt: new Date(),
-                history: [{status: "Registered", time: new Date().toLocaleString(), user: auth.currentUser.email}]
+                history: [{status: "Registered", office: "Admission", time: new Date().toLocaleString(), user: auth.currentUser.email}]
             });
-            alert("Student Registered Successfully!");
+            alert("Student Registered!");
         };
 
+        window.closeModal = () => document.getElementById('studentModal').style.display = 'none';
+        function fillSelect(id, arr) {
+            const el = document.getElementById(id);
+            if(el && arr) el.innerHTML = arr.map(x => `<option value="${x}">${x}</option>`).join('');
+        }
         window.showView = (v, el) => {
             document.querySelectorAll('.view-section').forEach(x => x.classList.remove('active'));
-            const target = document.getElementById(v + 'View');
-            if(target) target.classList.add('active');
+            document.getElementById(v + 'View').classList.add('active');
             document.querySelectorAll('.nav').forEach(n => n.classList.remove('active'));
-            if(el) el.classList.add('active');
+            el.classList.add('active');
         };
     </script>
 </body>
