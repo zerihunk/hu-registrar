@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>HU Registrar | Smart Enterprise System</title>
+    <title>HU Registrar | Final Pro System</title>
     <style>
         :root { --primary: #1a252f; --accent: #3498db; --bg: #f4f7fa; --border: #e1e8ed; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; background: var(--bg); overflow: hidden; }
@@ -37,7 +37,7 @@
 
     <div id="mainApp" style="display:none; width:100%;">
         <div class="sidebar">
-            <div class="brand">HU Cloud v2.0</div>
+            <div class="brand">HU Cloud Pro</div>
             <div class="nav active" onclick="showView('dash', this)">Dashboard</div>
             <div class="nav" onclick="showView('reg', this)">Register Student</div>
             <div class="nav" id="staffLink" onclick="showView('staff', this)">Staff Manager</div>
@@ -54,14 +54,14 @@
             <div class="content">
                 <div id="dashView" class="view-section active">
                     <div class="card">
-                        <h3>Welcome to HU Registrar Portal</h3>
-                        <p>The system is connected to Firebase Firestore and updating in real-time.</p>
+                        <h3>Hawassa University Registrar Dashboard</h3>
+                        <p>All data is synchronized with Firebase Firestore.</p>
                     </div>
                 </div>
 
                 <div id="regView" class="view-section">
                     <div class="card" style="max-width: 700px;">
-                        <h3>New Student Registration</h3>
+                        <h3>Register Student</h3>
                         <div class="grid-layout">
                             <div><label>Full Name</label><input id="sName"></div>
                             <div><label>Award Date</label><input type="date" id="sAwardDate"></div>
@@ -72,30 +72,30 @@
                         </div>
                         <label style="display:block; margin-top:15px;">Service Type</label>
                         <select id="dropService"></select>
-                        <button onclick="addStudent()">Save & Sync Student</button>
+                        <button onclick="addStudent()">Register Student</button>
                     </div>
                 </div>
 
                 <div id="staffView" class="view-section">
                     <div class="card" style="max-width: 600px;">
                         <h3>Staff Profile Registration</h3>
-                        <input id="stName" placeholder="Staff Full Name">
-                        <input id="stEmail" placeholder="Staff Email">
-                        <select id="stRole"></select>
-                        <select id="stRoom"></select>
+                        <input id="stName" placeholder="Full Name">
+                        <input id="stEmail" placeholder="Email Address">
+                        <label>Role</label><select id="stRole"></select>
+                        <label>Room/Office</label><select id="stRoom"></select>
                         <button onclick="registerStaff()">Create Staff Profile</button>
                     </div>
                 </div>
 
                 <div id="sysView" class="view-section">
                     <div class="card">
-                        <h3 style="border-bottom: 2px solid var(--accent); padding-bottom: 10px;">Master Data Configuration</h3>
+                        <h3>System Master Data</h3>
                         <div class="grid-layout">
                             <div><h4>Roles</h4><ul id="listRoles"></ul></div>
                             <div><h4>Rooms</h4><ul id="listRooms"></ul></div>
                             <div><h4>Services</h4><ul id="listServices"></ul></div>
-                            <div><h4>Study Modalities</h4><ul id="listModality"></ul></div>
-                            <div><h4>Degree Types</h4><ul id="listDegrees"></ul></div>
+                            <div><h4>Modalities</h4><ul id="listModality"></ul></div>
+                            <div><h4>Degrees</h4><ul id="listDegrees"></ul></div>
                         </div>
                     </div>
                 </div>
@@ -121,10 +121,9 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // --- Auth Functions ---
         window.login = async () => {
             try { await signInWithEmailAndPassword(auth, email.value, pass.value); } 
-            catch (err) { alert("Login failed: " + err.message); }
+            catch (err) { alert("Error: " + err.message); }
         };
         window.logout = () => signOut(auth);
 
@@ -133,38 +132,36 @@
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'flex';
                 document.getElementById('userInfo').innerText = user.email;
-                await loadUserPermissions(user.uid);
-                syncSystemConfig();
+                await loadPermissions(user.uid);
+                syncConfig();
             } else {
                 document.getElementById('loginScreen').style.display = 'flex';
                 document.getElementById('mainApp').style.display = 'none';
             }
         });
 
-        async function loadUserPermissions(uid) {
+        async function loadPermissions(uid) {
             const snap = await getDoc(doc(db, "users", uid));
             if (snap.exists()) {
-                const data = snap.data();
-                const primaryRole = (data.userRoles || [])[0] || "Staff";
-                document.getElementById('roleBox').innerText = "Role: " + primaryRole;
-                document.getElementById('staffLink').style.display = primaryRole === "Admin" ? "flex" : "none";
+                const roles = snap.data().userRoles || [];
+                document.getElementById('roleBox').innerText = "Role: " + (roles[0] || "Staff");
+                document.getElementById('staffLink').style.display = roles.includes("Admin") ? "flex" : "none";
             }
         }
 
-        // --- Sync Config (Study Modality & System Config Added) ---
-        function syncSystemConfig() {
+        function syncConfig() {
             onSnapshot(doc(db, "config", "general"), (snap) => {
                 if (snap.exists()) {
                     const d = snap.data();
                     
-                    // Update Dropdowns for Forms
+                    // Update Dropdowns
                     document.getElementById('dropDegree').innerHTML = (d.degreetypes || []).map(x => `<option>${x}</option>`).join('');
                     document.getElementById('dropModality').innerHTML = (d.studymodalitys || []).map(x => `<option>${x}</option>`).join('');
                     document.getElementById('dropService').innerHTML = (d.services || []).map(x => `<option>${x}</option>`).join('');
                     document.getElementById('stRole').innerHTML = (d.roles || []).map(x => `<option>${x}</option>`).join('');
                     document.getElementById('stRoom').innerHTML = (d.rooms || []).map(x => `<option>${x}</option>`).join('');
 
-                    // Update System Config View (Master Data)
+                    // Update System Config View
                     document.getElementById('listRoles').innerHTML = (d.roles || []).map(x => `<li>${x}</li>`).join('');
                     document.getElementById('listRooms').innerHTML = (d.rooms || []).map(x => `<li>${x}</li>`).join('');
                     document.getElementById('listServices').innerHTML = (d.services || []).map(x => `<li>${x}</li>`).join('');
@@ -174,20 +171,18 @@
             });
         }
 
-        // --- Action Handlers ---
         window.addStudent = async () => {
-            if(!sName.value) return alert("Student name required!");
+            if(!sName.value) return alert("Name is required");
             await addDoc(collection(db, "students"), {
                 name: sName.value,
                 awardDate: sAwardDate.value,
                 degree: dropDegree.value,
                 modality: dropModality.value,
                 service: dropService.value,
-                createdAt: new Date().toISOString()
+                createdAt: new Date()
             });
-            alert("Student Registered Successfully!");
+            alert("Student Registered!");
             sName.value = "";
-            showView('dash', document.querySelector('.nav'));
         };
 
         window.registerStaff = async () => {
@@ -198,8 +193,7 @@
                 office: stRoom.value,
                 isActive: true
             });
-            alert("Staff Profile Created!");
-            stName.value = ""; stEmail.value = "";
+            alert("Staff Added!");
         };
 
         window.showView = (v, el) => {
