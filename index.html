@@ -32,7 +32,12 @@
         
         .view-section { display: none; }
         .view-section.active { display: block; }
-        .config-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+
+        /* System Config Styles */
+        .config-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }
+        .config-box { background: #f8f9fa; border: 1px solid var(--border); padding: 15px; border-radius: 8px; }
+        .config-box h4 { margin: 0 0 10px 0; color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 5px; }
+        .config-box ul { padding-left: 20px; margin: 0; font-size: 0.85rem; color: #555; }
     </style>
 </head>
 <body>
@@ -71,7 +76,7 @@
                         <h3>Student Workflow Tracker</h3>
                         <table id="studentTbl">
                             <thead>
-                                <tr><th>Name</th><th>Dept</th><th>Service</th><th>Status</th><th>Log</th><th>Action</th></tr>
+                                <tr><th>Name</th><th>Department</th><th>Service</th><th>Status</th><th>Log</th><th>Action</th></tr>
                             </thead>
                             <tbody></tbody>
                         </table>
@@ -108,14 +113,16 @@
                         <label>Award Date</label><input type="date" id="sDate">
                         <label>Modality</label><select id="dropModality"></select>
                         <label>Service</label><select id="dropService"></select>
-                        <button onclick="registerStudent()" style="width:100%;">Submit</button>
+                        <button onclick="registerStudent()" style="width:100%;">Submit Registration</button>
                     </div>
                 </div>
 
                 <div id="sysView" class="view-section">
                     <div class="card">
-                        <h3>System Master Lists</h3>
-                        <div id="sysConfigData">Loading system configuration...</div>
+                        <h3>System Master Data Configuration</h3>
+                        <p style="font-size: 0.9rem; color: #666;">View current active categories synchronized from Cloud Storage.</p>
+                        <div id="configGridContainer" class="config-grid">
+                            </div>
                     </div>
                 </div>
             </div>
@@ -153,8 +160,8 @@
                     const snap = await getDocs(q);
                     if (!snap.empty) {
                         await createUserWithEmailAndPassword(auth, email, pass);
-                    } else { alert("Access Denied."); }
-                } else { alert("Login Failed."); }
+                    } else { alert("User not registered in system."); }
+                } else { alert("Invalid credentials."); }
             }
         };
 
@@ -186,6 +193,7 @@
         }
 
         function initSync() {
+            // Students tracking
             onSnapshot(query(collection(db, "students"), orderBy("createdAt", "desc")), (snap) => {
                 const tbody = document.querySelector("#studentTbl tbody");
                 tbody.innerHTML = "";
@@ -193,13 +201,13 @@
                     const s = d.data();
                     tbody.innerHTML += `<tr>
                         <td><b>${s.name}</b></td>
-                        <td>${s.department || '-'}</td>
+                        <td>${s.department || 'N/A'}</td>
                         <td>${s.service}</td>
                         <td><span class="badge">${s.currentStatus}</span></td>
                         <td style="font-size:10px;">${s.history.map(h => `<div>${h.status} (${h.time})</div>`).join('')}</td>
                         <td>
                             <select onchange="updateWorkflow('${d.id}', this.value)">
-                                <option value="">Move to...</option>
+                                <option value="">Action...</option>
                                 <option value="Admission">Admission</option>
                                 <option value="Finance">Finance</option>
                                 <option value="Registrar">Registrar</option>
@@ -210,6 +218,7 @@
                 });
             });
 
+            // Staff Sync
             if (currentUserRole === "Admin") {
                 onSnapshot(collection(db, "users"), (snap) => {
                     const tbody = document.querySelector("#staffListTbl tbody");
@@ -221,12 +230,15 @@
                 });
             }
 
+            // Global Config Sync
             onSnapshot(doc(db, "config", "general"), (snap) => {
                 if (snap.exists()) {
                     const d = snap.data();
+                    
+                    // Fill dropdowns
                     const fill = (id, arr) => {
                         const el = document.getElementById(id);
-                        if(el) el.innerHTML = arr.map(x => `<option>${x}</option>`).join('');
+                        if(el && arr) el.innerHTML = arr.map(x => `<option>${x}</option>`).join('');
                     };
                     fill('dropModality', d.studymodalitys);
                     fill('dropService', d.services);
@@ -234,22 +246,38 @@
                     fill('stRole', d.roles);
                     fill('stRoom', d.rooms);
 
-                    // Show in System Config View
-                    let html = "<h4>Departments</h4><ul>" + d.departments.map(x => `<li>${x}</li>`).join('') + "</ul>";
-                    html += "<h4>Services</h4><ul>" + d.services.map(x => `<li>${x}</li>`).join('') + "</ul>";
-                    document.getElementById('sysConfigData').innerHTML = html;
+                    // Render System Config View
+                    const container = document.getElementById('configGridContainer');
+                    const sections = [
+                        {title: "Departments", data: d.departments},
+                        {title: "Services", data: d.services},
+                        {title: "Study Modality", data: d.studymodalitys},
+                        {title: "System Roles", data: d.roles},
+                        {title: "Offices/Rooms", data: d.rooms}
+                    ];
+
+                    container.innerHTML = sections.map(s => `
+                        <div class="config-box">
+                            <h4>${s.title}</h4>
+                            <ul>${s.data ? s.data.map(item => `<li>${item}</li>`).join('') : '<li>No data</li>'}</ul>
+                        </div>
+                    `).join('');
                 }
             });
         }
 
         window.registerStaff = async () => {
+            const name = document.getElementById('stName').value;
+            const email = document.getElementById('stEmail').value;
+            if(!name || !email) return alert("Fields cannot be empty");
+            
             await addDoc(collection(db, "users"), {
-                name: document.getElementById('stName').value,
-                email: document.getElementById('stEmail').value,
+                name: name,
+                email: email,
                 userRoles: [document.getElementById('stRole').value],
                 office: document.getElementById('stRoom').value
             });
-            alert("Staff Saved!");
+            alert("Staff Profile Created Successfully");
         };
 
         window.updateWorkflow = async (id, next) => {
@@ -261,8 +289,11 @@
         };
 
         window.registerStudent = async () => {
+            const name = document.getElementById('sName').value;
+            if(!name) return alert("Enter Student Name");
+
             await addDoc(collection(db, "students"), {
-                name: document.getElementById('sName').value,
+                name: name,
                 department: document.getElementById('dropDept').value,
                 service: document.getElementById('dropService').value,
                 modality: document.getElementById('dropModality').value,
@@ -270,14 +301,15 @@
                 createdAt: new Date(),
                 history: [{status: "Registered", time: new Date().toLocaleString(), user: auth.currentUser.email}]
             });
-            alert("Registered!");
+            alert("Student Registered Successfully!");
         };
 
         window.showView = (v, el) => {
             document.querySelectorAll('.view-section').forEach(x => x.classList.remove('active'));
-            document.getElementById(v + 'View').classList.add('active');
+            const target = document.getElementById(v + 'View');
+            if(target) target.classList.add('active');
             document.querySelectorAll('.nav').forEach(n => n.classList.remove('active'));
-            el.classList.add('active');
+            if(el) el.classList.add('active');
         };
     </script>
 </body>
