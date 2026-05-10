@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HU Registrar | Firebase Shared System 2026</title>
+    <title>HU Registrar | Shared Firebase System</title>
     <style>
         :root {
             --primary: #2c3e50; --accent: #3498db; --bg: #f4f7fa;
@@ -12,46 +12,42 @@
         }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
         
-        /* Sidebar */
+        /* Sidebar Styles */
         .sidebar { width: 250px; background: var(--sidebar); color: white; display: flex; flex-direction: column; flex-shrink: 0; }
-        .brand { padding: 25px; font-size: 1.5rem; font-weight: bold; color: var(--accent); border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; }
-        .nav { padding: 15px 25px; cursor: pointer; color: #95a5a6; transition: 0.3s; }
+        .brand { padding: 25px; font-size: 1.4rem; font-weight: bold; color: var(--accent); border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        .nav { padding: 15px 25px; cursor: pointer; color: #95a5a6; transition: 0.3s; display: flex; align-items: center; gap: 10px; }
         .nav:hover { color: white; background: rgba(255,255,255,0.1); }
         .nav.active { color: white; background: rgba(255,255,255,0.05); border-left: 4px solid var(--accent); }
 
-        /* Main Content */
+        /* Main Styles */
         .main { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .header { height: 70px; background: white; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .header { height: 70px; background: white; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
         .content { padding: 30px; overflow-y: auto; flex-grow: 1; }
 
-        /* Cards & UI */
+        /* Card & UI */
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
         input, select { width: 100%; padding: 12px; margin-top: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
         button { padding: 12px 20px; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; }
-        button:hover { opacity: 0.9; }
         
-        /* Table */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th { text-align: left; padding: 15px; background: #f8f9fa; color: #7f8c8d; font-size: 0.85rem; text-transform: uppercase; }
+        th { text-align: left; padding: 15px; background: #f8f9fa; color: #7f8c8d; font-size: 0.85rem; }
         td { padding: 15px; border-bottom: 1px solid #eee; }
         
-        /* Badges */
         .badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; background: #e1f5fe; color: #03a9f4; }
         
-        /* Screens */
         #loginScreen { position: fixed; inset: 0; background: var(--sidebar); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        #mainApp { display: none; width: 100%; }
+        #mainApp { display: none; width: 100%; height: 100%; }
     </style>
 </head>
 <body>
 
     <div id="loginScreen">
         <div class="card" style="width: 350px;">
-            <h2 style="text-align: center; color: var(--primary); margin-bottom: 10px;">HU Registrar</h2>
-            <p style="text-align: center; color: #666; margin-bottom: 20px;">Shared Workflow System</p>
+            <h2 style="text-align: center; color: var(--primary);">HU Registrar</h2>
+            <p style="text-align: center; color: #666;">Cloud Workflow System</p>
             <input type="email" id="email" placeholder="Email Address">
             <input type="password" id="pass" placeholder="Password">
-            <button style="width: 100%;" onclick="login()">Login</button>
+            <button style="width: 100%;" onclick="login()">Sign In</button>
         </div>
     </div>
 
@@ -65,21 +61,20 @@
 
         <div class="main">
             <div class="header">
-                <div id="userInfo" style="font-weight: bold; color: var(--primary);">User: Loading...</div>
+                <div id="userInfo" style="font-weight: bold;">Loading User...</div>
                 <div id="roleBox" class="badge">Role: Guest</div>
             </div>
 
             <div class="content">
                 <div id="dashView">
                     <div class="card">
-                        <h3>Active Students Workflow</h3>
+                        <h3>Active Student Flow</h3>
                         <table>
                             <thead>
                                 <tr>
                                     <th>Name</th>
                                     <th>Department</th>
-                                    <th>Degree</th>
-                                    <th>Current Step</th>
+                                    <th>Status</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -90,15 +85,15 @@
 
                 <div id="regView" style="display:none;">
                     <div class="card" style="max-width: 500px;">
-                        <h3>New Student Registration</h3>
-                        <input id="inName" placeholder="Student Full Name">
+                        <h3>New Registration</h3>
+                        <input id="inName" placeholder="Full Name">
                         <input id="inDept" placeholder="Department">
                         <select id="inDeg">
-                            <option value="Degree">Degree</option>
-                            <option value="Masters">Masters</option>
-                            <option value="PhD">PhD</option>
+                            <option>Degree</option>
+                            <option>Masters</option>
+                            <option>PhD</option>
                         </select>
-                        <button onclick="addStudent()">Save & Open Case</button>
+                        <button onclick="addStudent()">Save Student</button>
                     </div>
                 </div>
             </div>
@@ -110,7 +105,6 @@
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        // Your Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDLFipN6v4UCa4D429-J7N4BidGgPXSazY",
             authDomain: "hu-registrar-a915c.firebaseapp.com",
@@ -127,114 +121,103 @@
         let students = [];
         let currentUserRole = "Guest";
 
-        // Login Function
+        // Login
         window.login = async () => {
             const e = document.getElementById('email').value;
             const p = document.getElementById('pass').value;
             try {
                 await signInWithEmailAndPassword(auth, e, p);
-            } catch (err) { alert("Error: " + err.message); }
+            } catch (err) { alert("Login Error: " + err.message); }
         };
 
-        // Logout Function
         window.logout = () => signOut(auth);
 
-        // Fetch User Role from "users" collection
+        // Role fetcher (Updated for your 'userRoles' Array)
         async function fetchRole(uid) {
             const docRef = doc(db, "users", uid);
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
-                currentUserRole = docSnap.data().role;
+                const data = docSnap.data();
+                // Array ውስጥ ያለውን የመጀመሪያውን Role ይወስዳል
+                currentUserRole = data.userRoles && data.userRoles.length > 0 ? data.userRoles[0] : "Guest";
                 document.getElementById('roleBox').innerText = "Role: " + currentUserRole;
-                // Only Admission or Admin can see Reg Nav
-                document.getElementById('regNav').style.display = (currentUserRole === 'Admission' || currentUserRole === 'Admin') ? 'block' : 'none';
+                
+                // Permission check for sidebar
+                document.getElementById('regNav').style.display = (currentUserRole === 'Admission' || currentUserRole === 'Admin') ? 'flex' : 'none';
             }
         }
 
-        // Auth State Listener
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'flex';
-                document.getElementById('userInfo').innerText = "User: " + user.email;
+                document.getElementById('userInfo').innerText = user.email;
                 await fetchRole(user.uid);
-                initRealtime();
+                initData();
             } else {
                 document.getElementById('loginScreen').style.display = 'flex';
                 document.getElementById('mainApp').style.display = 'none';
             }
         });
 
-        // Realtime Data
-        function initRealtime() {
+        function initData() {
             onSnapshot(collection(db, "students"), (snap) => {
                 students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 render();
             });
         }
 
-        // Add Student
         window.addStudent = async () => {
             const name = document.getElementById('inName').value;
             const dept = document.getElementById('inDept').value;
             const deg = document.getElementById('inDeg').value;
-            if(!name || !dept) return alert("Fields cannot be empty");
+            if(!name) return alert("Name is required");
 
             await addDoc(collection(db, "students"), {
-                name: name, dept: dept, deg: deg,
-                step: "Registered", createdAt: new Date().toISOString()
+                name, dept, deg, step: "Registered", time: new Date().toISOString()
             });
-            alert("Registered!");
-            window.show('dash', document.querySelector('.nav'));
             document.getElementById('inName').value = "";
-            document.getElementById('inDept').value = "";
+            window.show('dash', document.querySelector('.nav'));
         };
 
-        // Workflow Logic
-        function canProcess(currentStep) {
-            if(currentUserRole === "Admin") return true;
-            if(currentUserRole === "Admission" && currentStep === "Registered") return true;
-            if(currentUserRole === "Finance" && currentStep === "Admission") return true;
-            if(currentUserRole === "Registrar" && currentStep === "Finance") return true;
+        // Workflow Permission Logic
+        function canEdit(step) {
+            if (currentUserRole === "Admin") return true;
+            if (currentUserRole === "Admission" && step === "Registered") return true;
+            if (currentUserRole === "Finance" && step === "Admission") return true;
+            if (currentUserRole === "Registrar" && step === "Finance") return true;
             return false;
         }
 
-        window.updateStep = async (id, nextStep, currentStep) => {
-            if (!canProcess(currentStep)) {
-                alert("You don't have permission to move a case from " + currentStep);
+        window.updateStep = async (id, next, current) => {
+            if (!canEdit(current)) {
+                alert("Permission Denied: Your role cannot move cases from " + current);
                 render();
                 return;
             }
-            await updateDoc(doc(db, "students", id), { step: nextStep });
+            await updateDoc(doc(db, "students", id), { step: next });
         };
 
-        // Render Table
         function render() {
             const tbl = document.getElementById('tbl');
-            const workflow = ["Registered", "Admission", "Finance", "Registrar", "Completed"];
-            
-            tbl.innerHTML = students.map(s => {
-                const disabled = !canProcess(s.step);
-                return `
-                    <tr>
-                        <td><b>${s.name}</b></td>
-                        <td>${s.dept}</td>
-                        <td>${s.deg}</td>
-                        <td><span class="badge">${s.step}</span></td>
-                        <td>
-                            <select ${disabled ? 'disabled' : ''} onchange="updateStep('${s.id}', this.value, '${s.step}')">
-                                ${workflow.map(st => `<option value="${st}" ${s.step === st ? 'selected' : ''}>${st}</option>`).join('')}
-                            </select>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+            const steps = ["Registered", "Admission", "Finance", "Registrar", "Completed"];
+            tbl.innerHTML = students.map(s => `
+                <tr>
+                    <td><b>${s.name}</b></td>
+                    <td>${s.dept}</td>
+                    <td><span class="badge">${s.step}</span></td>
+                    <td>
+                        <select ${!canEdit(s.step) ? 'disabled' : ''} onchange="updateStep('${s.id}', this.value, '${s.step}')">
+                            ${steps.map(st => `<option value="${st}" ${s.step === st ? 'selected' : ''}>${st}</option>`).join('')}
+                        </select>
+                    </td>
+                </tr>
+            `).join('');
         }
 
-        // Navigation
-        window.show = (view, el) => {
-            document.getElementById('dashView').style.display = view === 'dash' ? 'block' : 'none';
-            document.getElementById('regView').style.display = view === 'reg' ? 'block' : 'none';
+        window.show = (v, el) => {
+            document.getElementById('dashView').style.display = v === 'dash' ? 'block' : 'none';
+            document.getElementById('regView').style.display = v === 'reg' ? 'block' : 'none';
             document.querySelectorAll('.nav').forEach(n => n.classList.remove('active'));
             el.classList.add('active');
         };
