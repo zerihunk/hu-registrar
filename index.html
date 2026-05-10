@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HU Registrar | Smart Workflow</title>
+    <title>HU Registrar | Pro Enterprise System</title>
     <style>
         :root { --primary: #1a252f; --accent: #3498db; --bg: #f4f7fa; --border: #e1e8ed; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; background: var(--bg); overflow: hidden; }
@@ -26,82 +25,84 @@
         .badge { background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
         .view-section { display: none; }
         .view-section.active { display: block; }
-        .history-log { font-size: 11px; color: #666; line-height: 1.4; }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <div class="brand">HU Registrar</div>
-        <div class="nav active" onclick="showView('dash', this)">Dashboard</div>
-        <div class="nav" onclick="showView('reg', this)">Register Student</div>
-        <div class="nav" id="staffMenu" onclick="showView('staff', this)">System Users</div>
-        <div class="nav" onclick="showView('sys', this)">System Config</div>
-        <div style="margin-top:auto;" class="nav" onclick="logout()">Logout</div>
-    </div>
-
-    <div class="main">
-        <div class="header">
-            <div id="userInfo" style="font-weight:bold;">Loading User...</div>
-            <div style="color: green; font-weight: bold;">● Online (Firebase Live)</div>
+    <div id="mainApp" style="display:flex; width:100%;">
+        <div class="sidebar">
+            <div class="brand">HU Registrar</div>
+            <div class="nav active" onclick="showView('dash', this)">Dashboard</div>
+            <div class="nav" onclick="showView('reg', this)">Register Student</div>
+            <div class="nav" id="staffMenu" onclick="showView('staff', this)">System Users</div>
+            <div class="nav" onclick="showView('sys', this)">System Config</div>
+            <div style="margin-top:auto;" class="nav" onclick="logout()">Logout</div>
         </div>
 
-        <div class="content">
-            
-            <div id="dashView" class="view-section active">
-                <div class="card">
-                    <h3>Registered Students & Live Workflow History</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Award Date</th>
-                                <th>Status</th>
-                                <th>Workflow History</th>
-                                <th>Update</th>
-                            </tr>
-                        </thead>
-                        <tbody id="studentTbl">
-                            <tr><td colspan="5" style="text-align:center;">Connecting...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+        <div class="main">
+            <div class="header">
+                <div id="userInfo" style="font-weight:bold;">Loading User...</div>
+                <div style="color: green; font-weight: bold;">● Live Sync Active</div>
             </div>
 
-            <div id="regView" class="view-section">
-                <div class="card" style="max-width: 500px; margin: auto;">
-                    <h3>New Student Entry</h3>
-                    <input id="sName" placeholder="Full Name">
-                    <input type="date" id="sDate">
-                    <label>Modality</label><select id="dropModality"></select>
-                    <label>Service</label><select id="dropService"></select>
-                    <button onclick="addStudent()">Register Student</button>
-                </div>
-            </div>
-
-            <div id="staffView" class="view-section">
-                <div class="card" style="max-width: 500px; margin: auto;">
-                    <h3>Staff Profile Creator</h3>
-                    <input id="stName" placeholder="Staff Name">
-                    <input id="stEmail" placeholder="Staff Email">
-                    <label>Role</label><select id="stRole"></select>
-                    <label>Room</label><select id="stRoom"></select>
-                    <button onclick="registerStaff()">Save Profile</button>
-                </div>
-            </div>
-
-            <div id="sysView" class="view-section">
-                <div class="card">
-                    <h3>System Master Data (from config/general)</h3>
-                    <div class="grid-layout">
-                        <div><h4>Roles</h4><ul id="listRoles"></ul></div>
-                        <div><h4>Rooms</h4><ul id="listRooms"></ul></div>
-                        <div><h4>Services</h4><ul id="listServices"></ul></div>
-                        <div><h4>Modalities</h4><ul id="listModality"></ul></div>
+            <div class="content">
+                
+                <div id="dashView" class="view-section active">
+                    <div class="card">
+                        <h3>Registered Students & Workflow History</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Full Name</th>
+                                    <th>Award Date</th>
+                                    <th>Status</th>
+                                    <th>History Log</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentTbl">
+                                <tr><td colspan="5" style="text-align:center;">No students registered yet.</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </div>
 
+                <div id="regView" class="view-section">
+                    <div class="card" style="max-width: 500px;">
+                        <h3>Register New Student</h3>
+                        <input id="sName" placeholder="Full Name">
+                        <input type="date" id="sDate">
+                        <select id="dropModality"></select>
+                        <select id="dropService"></select>
+                        <button onclick="addStudent()">Save & Start Workflow</button>
+                    </div>
+                </div>
+
+                <div id="staffView" class="view-section">
+                    <div class="card" style="max-width: 500px;">
+                        <h3>Register System User (Staff)</h3>
+                        <input id="stName" placeholder="Staff Full Name">
+                        <input id="stEmail" placeholder="Email Address">
+                        <label>Role</label><select id="stRole"></select>
+                        <label>Room</label><select id="stRoom"></select>
+                        <button onclick="registerStaff()">Create Staff Profile</button>
+                    </div>
+                </div>
+
+                <div id="sysView" class="view-section">
+                    <div class="card">
+                        <h3>System Configuration (Master Data)</h3>
+                        <div class="grid-layout">
+                            <div><h4>Roles</h4><ul id="listRoles"></ul></div>
+                            <div><h4>Rooms</h4><ul id="listRooms"></ul></div>
+                            <div><h4>Services</h4><ul id="listServices"></ul></div>
+                            <div><h4>Modalities</h4><ul id="listModality"></ul></div>
+                            <div><h4>Degrees</h4><ul id="listDegrees"></ul></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 
@@ -125,50 +126,56 @@
 
         let currentUser = "";
 
+        // --- AUTH & SYNC ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user.email;
                 document.getElementById('userInfo').innerText = user.email;
-                syncAll();
+                startSync();
             } else {
                 window.location.href = "login.html";
             }
         });
 
-        function syncAll() {
-            // Dashboard Sync
-            onSnapshot(query(collection(db, "students"), orderBy("createdAt", "desc")), (snap) => {
+        function startSync() {
+            // 1. Sync Students (Dashboard)
+            const q = query(collection(db, "students"), orderBy("createdAt", "desc"));
+            onSnapshot(q, (snap) => {
                 const tbl = document.getElementById('studentTbl');
                 tbl.innerHTML = snap.empty ? "<tr><td colspan='5' style='text-align:center;'>No records.</td></tr>" : "";
                 snap.forEach((doc) => {
                     const s = doc.data();
-                    const id = doc.id;
-                    const hLog = s.history.map(h => `<div class="history-log">● ${h.status} (${h.time})</div>`).join('');
-                    tbl.innerHTML += `<tr>
-                        <td><b>${s.name}</b></td>
-                        <td>${s.awardDate || 'N/A'}</td>
-                        <td><span class="badge">${s.currentStatus}</span></td>
-                        <td>${hLog}</td>
-                        <td><select onchange="updateFlow('${id}', this.value)">
-                            <option value="">Move to...</option>
-                            <option value="Admission">Admission</option>
-                            <option value="Finance">Finance</option>
-                            <option value="Registrar">Registrar</option>
-                            <option value="Completed">Completed</option>
-                        </select></td>
-                    </tr>`;
+                    const hist = s.history.map(h => `<div style="font-size:10px;">• ${h.status} (${h.time})</div>`).join('');
+                    tbl.innerHTML += `
+                        <tr>
+                            <td><b>${s.name}</b></td>
+                            <td>${s.awardDate}</td>
+                            <td><span class="badge">${s.currentStatus}</span></td>
+                            <td>${hist}</td>
+                            <td>
+                                <select onchange="updateStatus('${doc.id}', this.value)">
+                                    <option value="">Update...</option>
+                                    <option value="Admission">To Admission</option>
+                                    <option value="Finance">To Finance</option>
+                                    <option value="Completed">Completed</option>
+                                </select>
+                            </td>
+                        </tr>
+                    `;
                 });
             });
 
-            // Config Sync
+            // 2. Sync Config (System Config & Dropdowns)
             onSnapshot(doc(db, "config", "general"), (snap) => {
                 if (snap.exists()) {
                     const d = snap.data();
+                    // List Display
                     document.getElementById('listRoles').innerHTML = d.roles.map(x => `<li>${x}</li>`).join('');
                     document.getElementById('listRooms').innerHTML = d.rooms.map(x => `<li>${x}</li>`).join('');
                     document.getElementById('listServices').innerHTML = d.services.map(x => `<li>${x}</li>`).join('');
                     document.getElementById('listModality').innerHTML = d.studymodalitys.map(x => `<li>${x}</li>`).join('');
-                    
+                    document.getElementById('listDegrees').innerHTML = d.degreetypes.map(x => `<li>${x}</li>`).join('');
+                    // Dropdowns
                     document.getElementById('dropModality').innerHTML = d.studymodalitys.map(x => `<option>${x}</option>`).join('');
                     document.getElementById('dropService').innerHTML = d.services.map(x => `<option>${x}</option>`).join('');
                     document.getElementById('stRole').innerHTML = d.roles.map(x => `<option>${x}</option>`).join('');
@@ -177,9 +184,10 @@
             });
         }
 
+        // --- ACTIONS ---
         window.addStudent = async () => {
             const name = document.getElementById('sName').value;
-            if(!name) return alert("Enter student name");
+            if(!name) return alert("Name required");
             await addDoc(collection(db, "students"), {
                 name: name,
                 awardDate: document.getElementById('sDate').value,
@@ -189,11 +197,11 @@
                 createdAt: new Date(),
                 history: [{ status: "Registered", time: new Date().toLocaleString(), user: currentUser }]
             });
-            alert("Registered!");
+            alert("Student added!");
             showView('dash', document.querySelector('.nav'));
         };
 
-        window.updateFlow = async (id, next) => {
+        window.updateStatus = async (id, next) => {
             if(!next) return;
             await updateDoc(doc(db, "students", id), {
                 currentStatus: next,
@@ -203,10 +211,12 @@
 
         window.registerStaff = async () => {
             await addDoc(collection(db, "users"), {
-                name: stName.value, email: stEmail.value,
-                userRoles: [stRole.value], office: stRoom.value
+                name: stName.value,
+                email: stEmail.value,
+                userRoles: [stRole.value],
+                office: stRoom.value
             });
-            alert("Staff Saved!");
+            alert("Staff Profile Created!");
         };
 
         window.showView = (v, el) => {
