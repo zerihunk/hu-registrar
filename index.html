@@ -3,49 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HU Registrar | Staff & Workflow Management</title>
+    <title>HU Registrar | Management System</title>
     <style>
         :root { --primary: #1a252f; --accent: #3498db; --bg: #f4f7fa; --border: #e1e8ed; --danger: #e74c3c; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); height: 100vh; display: flex; overflow: hidden; }
         
+        /* Sidebar */
         .sidebar { width: 260px; background: var(--primary); color: white; display: flex; flex-direction: column; flex-shrink: 0; }
         .brand { padding: 25px; font-size: 1.3rem; font-weight: bold; color: var(--accent); border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; }
         .nav { padding: 15px 25px; cursor: pointer; color: #95a5a6; display: flex; align-items: center; gap: 12px; transition: 0.3s; }
         .nav:hover, .nav.active { color: white; background: rgba(255,255,255,0.1); border-left: 4px solid var(--accent); }
         .admin-only, .staff-only { display: none; }
 
+        /* Main Content */
         .main { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
         .header { height: 70px; background: white; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
         .content { padding: 25px; overflow-y: auto; flex-grow: 1; }
 
+        /* Cards & Tables */
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
         table { width: 100%; border-collapse: collapse; background: white; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 0.85rem; }
         th { background: #f8f9fa; color: #333; }
         
+        /* Forms */
         input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; }
         button { padding: 12px 20px; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-danger { background: var(--danger); }
         
         .badge { background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
         #loginOverlay { position: fixed; inset: 0; background: #1a252f; display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        
+        .view-section { display: none; }
+        .view-section.active { display: block; }
     </style>
 </head>
 <body>
 
     <div id="loginOverlay">
         <div class="card" style="width: 350px; text-align: center;">
-            <h2 style="color: var(--primary);">HU Registrar Login</h2>
-            <input type="email" id="loginEmail" placeholder="ኢሜይል">
-            <input type="password" id="loginPass" placeholder="ፓስዎርድ">
-            <button style="width: 100%;" onclick="handleLogin()">መግቢያ</button>
-            <p style="font-size: 12px; color: #666; margin-top: 15px;">አዲስ ሰራተኛ ከሆኑ በወሰዱት ፓስዎርድ ይግቡ።</p>
+            <h2 style="color: var(--primary);">System Login</h2>
+            <input type="email" id="loginEmail" placeholder="Email Address">
+            <input type="password" id="loginPass" placeholder="Password">
+            <button style="width: 100%;" onclick="handleLogin()">Sign In</button>
+            <p style="font-size: 11px; color: #666; margin-top: 15px;">New staff? Use your email and the default password "123456" to activate your account.</p>
         </div>
     </div>
 
     <div id="mainApp" style="display: none; width: 100%;">
         <div class="sidebar">
-            <div class="brand">HU Cloud</div>
+            <div class="brand">HU REGISTRAR</div>
             <div class="nav active" onclick="showView('dash', this)">Dashboard</div>
             <div class="nav staff-only" onclick="showView('reg', this)">Register Student</div>
             <div class="nav admin-only" onclick="showView('staff', this)">Staff Manager</div>
@@ -56,7 +62,7 @@
         <div class="main">
             <div class="header">
                 <div>
-                    <span id="userInfo" style="font-weight:bold;">Loading...</span>
+                    <span id="userInfo" style="font-weight:bold;">User</span>
                     <span id="roleBadge" class="badge" style="margin-left: 10px;"></span>
                 </div>
                 <div style="color: green; font-weight: bold;">● Online</div>
@@ -66,10 +72,16 @@
                 
                 <div id="dashView" class="view-section active">
                     <div class="card">
-                        <h3>Student Workflow List</h3>
+                        <h3>Student Workflow Tracking</h3>
                         <table id="studentTbl">
                             <thead>
-                                <tr><th>Name</th><th>Service</th><th>Status</th><th>History</th><th>Update Status</th></tr>
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>Service Type</th>
+                                    <th>Status</th>
+                                    <th>History Log</th>
+                                    <th>Action</th>
+                                </tr>
                             </thead>
                             <tbody></tbody>
                         </table>
@@ -77,21 +89,26 @@
                 </div>
 
                 <div id="staffView" class="view-section">
-                    <div class="grid-layout" style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
                         <div class="card">
-                            <h3>አዲስ ሰራተኛ መመዝገቢያ</h3>
-                            <label>ሙሉ ስም</label><input type="text" id="stName">
-                            <label>ኢሜይል</label><input type="email" id="stEmail">
-                            <label>ሮል</label><select id="stRole"></select>
-                            <label>ቢሮ</label><select id="stRoom"></select>
-                            <p style="font-size: 11px; color: #e67e22;">* መነሻ ፓስዎርድ በራስ-ሰር <b>123456</b> ይሆናል።</p>
-                            <button onclick="registerStaff()" style="width:100%;">ሰራተኛውን መዝግብ</button>
+                            <h3>Register New Staff</h3>
+                            <label>Full Name</label><input type="text" id="stName">
+                            <label>Email Address</label><input type="email" id="stEmail">
+                            <label>Assigned Role</label><select id="stRole"></select>
+                            <label>Office/Room</label><select id="stRoom"></select>
+                            <p style="font-size: 11px; color: #e67e22;">* Default password will be <b>123456</b></p>
+                            <button onclick="registerStaff()" style="width:100%;">Create Staff Account</button>
                         </div>
                         <div class="card">
-                            <h3>የሰራተኞች ዝርዝር</h3>
+                            <h3>Active Staff List</h3>
                             <table id="staffListTbl">
                                 <thead>
-                                    <tr><th>ስም</th><th>ኢሜይል</th><th>ሮል</th><th>ቢሮ</th></tr>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Office</th>
+                                    </tr>
                                 </thead>
                                 <tbody></tbody>
                             </table>
@@ -101,12 +118,19 @@
 
                 <div id="regView" class="view-section">
                     <div class="card" style="max-width: 500px;">
-                        <h3>አዲስ ተማሪ መመዝገቢያ</h3>
-                        <input type="text" id="sName" placeholder="የተማሪ ስም">
-                        <input type="date" id="sDate">
-                        <select id="dropModality"></select>
-                        <select id="dropService"></select>
-                        <button onclick="registerStudent()" style="width:100%;">ተማሪውን መዝግብ</button>
+                        <h3>Register New Student</h3>
+                        <label>Full Name</label><input type="text" id="sName">
+                        <label>Award Date</label><input type="date" id="sDate">
+                        <label>Modality</label><select id="dropModality"></select>
+                        <label>Service</label><select id="dropService"></select>
+                        <button onclick="registerStudent()" style="width:100%;">Submit Registration</button>
+                    </div>
+                </div>
+
+                <div id="sysView" class="view-section">
+                    <div class="card">
+                        <h3>General Configuration</h3>
+                        <div id="configSummary">Syncing with Cloud...</div>
                     </div>
                 </div>
 
@@ -134,21 +158,21 @@
 
         let userRole = "";
 
-        // --- LOGIN LOGIC ---
+        // --- AUTHENTICATION ---
         window.handleLogin = async () => {
             const email = document.getElementById('loginEmail').value;
             const pass = document.getElementById('loginPass').value;
             try {
                 await signInWithEmailAndPassword(auth, email, pass);
             } catch (err) {
-                // ሰራተኛው አዲስ ከሆነና በ Auth ካልተመዘገበ እንዲመዘገብ መሞከር (Auto-Signup for first timers)
+                // Check if user is pre-registered in Firestore but not in Auth
                 if (err.code === 'auth/user-not-found' && pass === '123456') {
                     try {
                         await createUserWithEmailAndPassword(auth, email, pass);
-                        alert("እንኳን ደህና መጡ! ለመጀመሪያ ጊዜ ስለገቡ መገለጫዎ ተፈጥሯል።");
-                    } catch (e) { alert("Login Error: " + e.message); }
+                        alert("Account activated! Welcome to the system.");
+                    } catch (e) { alert("Activation Error: " + e.message); }
                 } else {
-                    alert("ስህተት፡ " + err.message);
+                    alert("Login Failed: " + err.message);
                 }
             }
         };
@@ -158,17 +182,17 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 document.getElementById('userInfo').innerText = user.email;
-                await checkUserRole(user.email);
+                await fetchUserRole(user.email);
                 document.getElementById('loginOverlay').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'flex';
-                syncData();
+                startRealtimeSync();
             } else {
                 document.getElementById('loginOverlay').style.display = 'flex';
                 document.getElementById('mainApp').style.display = 'none';
             }
         });
 
-        async function checkUserRole(email) {
+        async function fetchUserRole(email) {
             const q = query(collection(db, "users"), where("email", "==", email));
             const snap = await getDocs(q);
             if (!snap.empty) {
@@ -182,22 +206,23 @@
             }
         }
 
-        function syncData() {
-            // Students Table
+        function startRealtimeSync() {
+            // Students Sync
             onSnapshot(query(collection(db, "students"), orderBy("createdAt", "desc")), (snap) => {
                 const tbody = document.querySelector("#studentTbl tbody");
                 tbody.innerHTML = "";
                 snap.forEach(d => {
                     const s = d.data();
-                    const h = s.history.map(x => `<div>${x.status} (${x.time})</div>`).join('');
+                    const h = s.history.map(x => `<div>${x.status} <small>(${x.time})</small></div>`).join('');
                     tbody.innerHTML += `<tr>
-                        <td>${s.name}</td>
+                        <td><b>${s.name}</b></td>
                         <td>${s.service}</td>
                         <td><span class="badge">${s.currentStatus}</span></td>
                         <td style="font-size:10px;">${h}</td>
                         <td>
                             <select onchange="updateStatus('${d.id}', this.value)">
-                                <option value="">ቀይር...</option>
+                                <option value="">Move to...</option>
+                                <option value="Admission">Admission</option>
                                 <option value="Finance">Finance</option>
                                 <option value="Registrar">Registrar</option>
                                 <option value="Completed">Completed</option>
@@ -207,7 +232,7 @@
                 });
             });
 
-            // Staff Table (Admin Only)
+            // Staff List Sync (Admin only)
             if (userRole === "Admin") {
                 onSnapshot(collection(db, "users"), (snap) => {
                     const tbody = document.querySelector("#staffListTbl tbody");
@@ -224,11 +249,14 @@
                 });
             }
 
-            // Dropdowns
+            // Dropdowns & Config Sync
             onSnapshot(doc(db, "config", "general"), (snap) => {
                 if (snap.exists()) {
                     const d = snap.data();
-                    const fill = (id, arr) => document.getElementById(id).innerHTML = arr.map(x => `<option>${x}</option>`).join('');
+                    const fill = (id, arr) => {
+                        const el = document.getElementById(id);
+                        if(el) el.innerHTML = arr.map(x => `<option>${x}</option>`).join('');
+                    };
                     fill('dropModality', d.studymodalitys);
                     fill('dropService', d.services);
                     fill('stRole', d.roles);
@@ -237,11 +265,11 @@
             });
         }
 
-        // --- ACTIONS ---
+        // --- BUTTON ACTIONS ---
         window.registerStaff = async () => {
             const email = document.getElementById('stEmail').value;
             const name = document.getElementById('stName').value;
-            if(!email || !name) return alert("እባክዎ ሁሉንም ይሙሉ");
+            if(!email || !name) return alert("Please fill all fields");
 
             await addDoc(collection(db, "users"), {
                 name: name,
@@ -249,7 +277,7 @@
                 userRoles: [document.getElementById('stRole').value],
                 office: document.getElementById('stRoom').value
             });
-            alert("ሰራተኛው በስኬት ተመዝግቧል። መነሻ ፓስዎርድ፡ 123456");
+            alert("Staff pre-registered! They can now login with password '123456'");
         };
 
         window.updateStatus = async (id, next) => {
@@ -261,15 +289,17 @@
         };
 
         window.registerStudent = async () => {
+            const name = document.getElementById('sName').value;
+            if(!name) return alert("Enter Student Name");
             await addDoc(collection(db, "students"), {
-                name: document.getElementById('sName').value,
+                name: name,
                 service: document.getElementById('dropService').value,
                 modality: document.getElementById('dropModality').value,
                 currentStatus: "Registered",
                 createdAt: new Date(),
                 history: [{status: "Registered", time: new Date().toLocaleString(), user: auth.currentUser.email}]
             });
-            alert("ተማሪው ተመዝግቧል!");
+            alert("Student Registered Successfully!");
         };
 
         window.showView = (v, el) => {
