@@ -2,102 +2,68 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>HU Registrar | Final Pro System</title>
+    <title>HU Registrar | Workflow History System</title>
     <style>
         :root { --primary: #1a252f; --accent: #3498db; --bg: #f4f7fa; --border: #e1e8ed; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; background: var(--bg); overflow: hidden; }
-        .sidebar { width: 260px; background: var(--primary); color: white; display: flex; flex-direction: column; flex-shrink: 0; }
-        .brand { padding: 25px; font-size: 1.3rem; font-weight: bold; color: var(--accent); border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; }
-        .nav { padding: 15px 25px; cursor: pointer; color: #95a5a6; display: flex; align-items: center; gap: 12px; transition: 0.3s; }
-        .nav:hover, .nav.active { color: white; background: rgba(255,255,255,0.1); border-left: 4px solid var(--accent); }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; background: var(--bg); }
+        .sidebar { width: 250px; background: var(--primary); color: white; flex-shrink: 0; display: flex; flex-direction: column; }
+        .nav { padding: 15px 25px; cursor: pointer; color: #95a5a6; }
+        .nav.active { background: rgba(255,255,255,0.1); color: white; border-left: 4px solid var(--accent); }
         .main { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .header { height: 70px; background: white; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
-        .content { padding: 30px; overflow-y: auto; flex-grow: 1; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
-        .grid-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-        input, select { width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        button { padding: 12px 25px; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; }
-        ul { list-style: none; padding: 0; }
-        li { padding: 10px; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; color: #555; display: flex; align-items: center; }
-        li::before { content: "▹"; color: var(--accent); margin-right: 8px; font-weight: bold; }
-        .view-section { display: none; }
-        .view-section.active { display: block; }
+        .header { height: 60px; background: white; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+        .content { padding: 25px; overflow-y: auto; flex-grow: 1; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        th { background: #f8f9fa; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background: #e1f5fe; color: #03a9f4; }
+        .history-item { font-size: 0.8rem; color: #666; border-left: 2px solid var(--accent); padding-left: 10px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
-    <div id="loginScreen" style="position:fixed; inset:0; background:var(--primary); display:flex; align-items:center; justify-content:center; z-index:1000;">
-        <div class="card" style="width:350px;">
-            <h2 style="text-align:center; margin-bottom:20px;">HU Registrar</h2>
-            <input type="email" id="email" placeholder="Email Address">
-            <input type="password" id="pass" placeholder="Password">
-            <button style="width:100%;" onclick="login()">Login to System</button>
-        </div>
+    <div class="sidebar">
+        <h2 style="text-align: center; color: var(--accent);">HU Cloud</h2>
+        <div class="nav active" onclick="showView('dash', this)">Live Dashboard</div>
+        <div class="nav" onclick="showView('reg', this)">New Registration</div>
+        <div class="nav" onclick="showView('sys', this)">System Config</div>
+        <div class="nav" onclick="logout()" style="margin-top: auto;">Logout</div>
     </div>
 
-    <div id="mainApp" style="display:none; width:100%;">
-        <div class="sidebar">
-            <div class="brand">HU Cloud Pro</div>
-            <div class="nav active" onclick="showView('dash', this)">Dashboard</div>
-            <div class="nav" onclick="showView('reg', this)">Register Student</div>
-            <div class="nav" id="staffLink" onclick="showView('staff', this)">Staff Manager</div>
-            <div class="nav" onclick="showView('sys', this)">System Config</div>
-            <div style="margin-top:auto;" class="nav" onclick="logout()">Logout</div>
+    <div class="main">
+        <div class="header">
+            <div id="userMail">Syncing...</div>
+            <div style="font-weight: bold;">Status: <span style="color: green;">Online (Firebase)</span></div>
         </div>
 
-        <div class="main">
-            <div class="header">
-                <div id="userInfo" style="font-weight:600;">Loading User...</div>
-                <div id="roleBox" style="background:#e1f5fe; color:#03a9f4; padding:6px 15px; border-radius:20px; font-size:12px; font-weight:bold;">Role: Guest</div>
+        <div class="content">
+            <div id="dashView" class="view-section active">
+                <div class="card">
+                    <h3>Current Student Workflow Status</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Modality / Service</th>
+                                <th>Current Status</th>
+                                <th>History Log</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentTbl"></tbody>
+                    </table>
+                </div>
             </div>
 
-            <div class="content">
-                <div id="dashView" class="view-section active">
-                    <div class="card">
-                        <h3>Hawassa University Registrar Dashboard</h3>
-                        <p>All data is synchronized with Firebase Firestore.</p>
-                    </div>
-                </div>
-
-                <div id="regView" class="view-section">
-                    <div class="card" style="max-width: 700px;">
-                        <h3>Register Student</h3>
-                        <div class="grid-layout">
-                            <div><label>Full Name</label><input id="sName"></div>
-                            <div><label>Award Date</label><input type="date" id="sAwardDate"></div>
-                        </div>
-                        <div class="grid-layout" style="margin-top:15px;">
-                            <div><label>Degree Type</label><select id="dropDegree"></select></div>
-                            <div><label>Study Modality</label><select id="dropModality"></select></div>
-                        </div>
-                        <label style="display:block; margin-top:15px;">Service Type</label>
-                        <select id="dropService"></select>
-                        <button onclick="addStudent()">Register Student</button>
-                    </div>
-                </div>
-
-                <div id="staffView" class="view-section">
-                    <div class="card" style="max-width: 600px;">
-                        <h3>Staff Profile Registration</h3>
-                        <input id="stName" placeholder="Full Name">
-                        <input id="stEmail" placeholder="Email Address">
-                        <label>Role</label><select id="stRole"></select>
-                        <label>Room/Office</label><select id="stRoom"></select>
-                        <button onclick="registerStaff()">Create Staff Profile</button>
-                    </div>
-                </div>
-
-                <div id="sysView" class="view-section">
-                    <div class="card">
-                        <h3>System Master Data</h3>
-                        <div class="grid-layout">
-                            <div><h4>Roles</h4><ul id="listRoles"></ul></div>
-                            <div><h4>Rooms</h4><ul id="listRooms"></ul></div>
-                            <div><h4>Services</h4><ul id="listServices"></ul></div>
-                            <div><h4>Modalities</h4><ul id="listModality"></ul></div>
-                            <div><h4>Degrees</h4><ul id="listDegrees"></ul></div>
-                        </div>
-                    </div>
+            <div id="regView" class="view-section" style="display:none;">
+                <div class="card" style="max-width: 500px;">
+                    <h3>New Entry</h3>
+                    <input type="text" id="sName" placeholder="Full Name" style="width:100%; padding:10px; margin-bottom:10px;">
+                    <label>Award Date</label>
+                    <input type="date" id="sDate" style="width:100%; padding:10px; margin-bottom:10px;">
+                    <select id="dropMod" style="width:100%; padding:10px; margin-bottom:10px;"></select>
+                    <select id="dropServ" style="width:100%; padding:10px; margin-bottom:10px;"></select>
+                    <button onclick="registerStudent()" style="background:var(--accent); color:white; border:none; padding:10px 20px; border-radius:4px; cursor:pointer;">Register & Start Workflow</button>
                 </div>
             </div>
         </div>
@@ -105,8 +71,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, onSnapshot, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, collection, addDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDLFipN6v4UCa4D429-J7N4BidGgPXSazY",
@@ -121,87 +87,108 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        window.login = async () => {
-            try { await signInWithEmailAndPassword(auth, email.value, pass.value); } 
-            catch (err) { alert("Error: " + err.message); }
-        };
-        window.logout = () => signOut(auth);
+        let currentUserEmail = "";
 
-        onAuthStateChanged(auth, async (user) => {
+        // 1. ምዝገባ እና የመጀመሪያ ወርክ ፍሎው ታሪክ መፍጠር
+        window.registerStudent = async () => {
+            const name = document.getElementById('sName').value;
+            const status = "Registered";
+            const timestamp = new Date().toLocaleString();
+
+            const studentData = {
+                name: name,
+                awardDate: document.getElementById('sDate').value,
+                modality: document.getElementById('dropMod').value,
+                service: document.getElementById('dropServ').value,
+                currentStatus: status,
+                // የታሪክ መዝገብ (Workflow History)
+                history: [{
+                    status: status,
+                    time: timestamp,
+                    user: currentUserEmail
+                }]
+            };
+
+            await addDoc(collection(db, "students"), studentData);
+            alert("Student registered and workflow started!");
+            showView('dash');
+        };
+
+        // 2. የተማሪን ደረጃ መቀየር (Update Workflow)
+        window.updateWorkflow = async (id, nextStatus) => {
+            const timestamp = new Date().toLocaleString();
+            const studentRef = doc(db, "students", id);
+
+            await updateDoc(studentRef, {
+                currentStatus: nextStatus,
+                // አዲሱን ታሪክ ወደ ድሮው ታሪክ መጨመር (Array Union)
+                history: arrayUnion({
+                    status: nextStatus,
+                    time: timestamp,
+                    user: currentUserEmail
+                })
+            });
+        };
+
+        // 3. ዳሽቦርድ ላይ ዳታውን በሪል ታይም ማሳየት
+        function listenToData() {
+            onSnapshot(collection(db, "students"), (snap) => {
+                const tbl = document.getElementById('studentTbl');
+                tbl.innerHTML = "";
+
+                snap.forEach((doc) => {
+                    const s = doc.data();
+                    const id = doc.id;
+                    
+                    // የታሪክ ዝርዝርን ማዘጋጀት
+                    const historyHtml = s.history.map(h => 
+                        `<div class="history-item"><b>${h.status}</b> <br> <small>${h.time} by ${h.user}</small></div>`
+                    ).join('');
+
+                    tbl.innerHTML += `
+                        <tr>
+                            <td><b>${s.name}</b></td>
+                            <td>${s.modality} / ${s.service}</td>
+                            <td><span class="badge">${s.currentStatus}</span></td>
+                            <td>${historyHtml}</td>
+                            <td>
+                                <select onchange="updateWorkflow('${id}', this.value)">
+                                    <option value="">Move to...</option>
+                                    <option value="Admission">Admission</option>
+                                    <option value="Finance">Finance</option>
+                                    <option value="Registrar">Registrar</option>
+                                    <option value="Completed">Completed</option>
+                                </select>
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+
+            // Config sync (Modality/Service)
+            onSnapshot(doc(db, "config", "general"), (snap) => {
+                const d = snap.data();
+                document.getElementById('dropMod').innerHTML = d.studymodalitys.map(x => `<option>${x}</option>`).join('');
+                document.getElementById('dropServ').innerHTML = d.services.map(x => `<option>${x}</option>`).join('');
+            });
+        }
+
+        onAuthStateChanged(auth, (user) => {
             if (user) {
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('mainApp').style.display = 'flex';
-                document.getElementById('userInfo').innerText = user.email;
-                await loadPermissions(user.uid);
-                syncConfig();
+                currentUserEmail = user.email;
+                document.getElementById('userMail').innerText = user.email;
+                listenToData();
             } else {
-                document.getElementById('loginScreen').style.display = 'flex';
-                document.getElementById('mainApp').style.display = 'none';
+                // Redirect if logout
             }
         });
 
-        async function loadPermissions(uid) {
-            const snap = await getDoc(doc(db, "users", uid));
-            if (snap.exists()) {
-                const roles = snap.data().userRoles || [];
-                document.getElementById('roleBox').innerText = "Role: " + (roles[0] || "Staff");
-                document.getElementById('staffLink').style.display = roles.includes("Admin") ? "flex" : "none";
-            }
-        }
-
-        function syncConfig() {
-            onSnapshot(doc(db, "config", "general"), (snap) => {
-                if (snap.exists()) {
-                    const d = snap.data();
-                    
-                    // Update Dropdowns
-                    document.getElementById('dropDegree').innerHTML = (d.degreetypes || []).map(x => `<option>${x}</option>`).join('');
-                    document.getElementById('dropModality').innerHTML = (d.studymodalitys || []).map(x => `<option>${x}</option>`).join('');
-                    document.getElementById('dropService').innerHTML = (d.services || []).map(x => `<option>${x}</option>`).join('');
-                    document.getElementById('stRole').innerHTML = (d.roles || []).map(x => `<option>${x}</option>`).join('');
-                    document.getElementById('stRoom').innerHTML = (d.rooms || []).map(x => `<option>${x}</option>`).join('');
-
-                    // Update System Config View
-                    document.getElementById('listRoles').innerHTML = (d.roles || []).map(x => `<li>${x}</li>`).join('');
-                    document.getElementById('listRooms').innerHTML = (d.rooms || []).map(x => `<li>${x}</li>`).join('');
-                    document.getElementById('listServices').innerHTML = (d.services || []).map(x => `<li>${x}</li>`).join('');
-                    document.getElementById('listModality').innerHTML = (d.studymodalitys || []).map(x => `<li>${x}</li>`).join('');
-                    document.getElementById('listDegrees').innerHTML = (d.degreetypes || []).map(x => `<li>${x}</li>`).join('');
-                }
-            });
-        }
-
-        window.addStudent = async () => {
-            if(!sName.value) return alert("Name is required");
-            await addDoc(collection(db, "students"), {
-                name: sName.value,
-                awardDate: sAwardDate.value,
-                degree: dropDegree.value,
-                modality: dropModality.value,
-                service: dropService.value,
-                createdAt: new Date()
-            });
-            alert("Student Registered!");
-            sName.value = "";
+        window.showView = (v) => {
+            document.querySelectorAll('.view-section').forEach(x => x.style.display = 'none');
+            document.getElementById(v + 'View').style.display = 'block';
         };
 
-        window.registerStaff = async () => {
-            await addDoc(collection(db, "users"), {
-                name: stName.value,
-                email: stEmail.value,
-                userRoles: [stRole.value],
-                office: stRoom.value,
-                isActive: true
-            });
-            alert("Staff Added!");
-        };
-
-        window.showView = (v, el) => {
-            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-            document.getElementById(v + 'View').classList.add('active');
-            document.querySelectorAll('.nav').forEach(n => n.classList.remove('active'));
-            el.classList.add('active');
-        };
+        window.logout = () => signOut(auth);
     </script>
 </body>
 </html>
