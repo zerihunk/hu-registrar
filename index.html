@@ -3,23 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>HU Registrar</title>
+<title>HU Registrar Firebase</title>
 
 <style>
 body{
+    font-family:Arial;
+    background:#f4f6f9;
     margin:0;
-    font-family:Arial, Helvetica, sans-serif;
-    background:#f4f7fa;
+    padding:0;
 }
 
 .header{
     background:#2c3e50;
     color:white;
-    padding:15px 25px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
+    padding:15px;
+    font-size:24px;
 }
 
 .container{
@@ -38,16 +36,18 @@ input,select{
     width:100%;
     padding:10px;
     margin-top:10px;
-    box-sizing:border-box;
+    border:1px solid #ccc;
+    border-radius:5px;
 }
 
 button{
     padding:10px 15px;
-    border:none;
     background:#3498db;
     color:white;
-    cursor:pointer;
+    border:none;
     border-radius:5px;
+    cursor:pointer;
+    margin-top:10px;
 }
 
 table{
@@ -56,30 +56,12 @@ table{
 }
 
 th,td{
-    border-bottom:1px solid #ddd;
     padding:10px;
-    text-align:left;
+    border-bottom:1px solid #ddd;
 }
 
-#loginScreen{
-    position:fixed;
-    inset:0;
-    background:#1a252f;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    z-index:9999;
-}
-
-.login-box{
-    background:white;
-    width:320px;
-    padding:40px;
-    border-radius:15px;
-}
-
-.row-complete{
-    background:#e8f5e9;
+#mainApp{
+    display:none;
 }
 </style>
 </head>
@@ -87,98 +69,78 @@ th,td{
 <body>
 
 <!-- LOGIN -->
-
-<div id="loginScreen">
-
-    <div class="login-box">
-
+<div id="loginScreen" class="container">
+    <div class="card" style="max-width:400px;margin:auto;margin-top:100px;">
         <h2>HU Registrar Login</h2>
 
         <input type="email" id="lUser" placeholder="Email">
-
         <input type="password" id="lPass" placeholder="Password">
 
-        <button style="width:100%;margin-top:15px;" onclick="doLogin()">
-            Login
+        <button onclick="doLogin()">Login</button>
+    </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp">
+
+    <div class="header">
+        HU Registrar System
+        <button onclick="logout()" style="float:right;background:red;">
+            Logout
         </button>
-
     </div>
 
-</div>
+    <div class="container">
 
-<!-- MAIN -->
+        <div class="card">
+            <h3>Register Student</h3>
 
-<div class="header">
-    <h2>HU Registrar System</h2>
+            <input type="text" id="inName" placeholder="Student Name">
+            <input type="text" id="inDept" placeholder="Department">
 
-    <button onclick="logout()">Logout</button>
-</div>
+            <select id="inDeg">
+                <option>Degree</option>
+                <option>Masters</option>
+                <option>PhD</option>
+            </select>
 
-<div class="container">
+            <select id="inMod">
+                <option>Regular</option>
+                <option>Summer</option>
+                <option>Weekend</option>
+            </select>
 
-    <!-- ADD STUDENT -->
+            <input type="date" id="inDate">
 
-    <div class="card">
+            <button onclick="saveNewReq()">
+                Save Student
+            </button>
+        </div>
 
-        <h3>Register Student</h3>
+        <div class="card">
+            <h3>Student Requests</h3>
 
-        <input type="text" id="inName" placeholder="Student Name">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Department</th>
+                        <th>Degree</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
 
-        <input type="text" id="inDept" placeholder="Department">
-
-        <select id="inDeg">
-            <option value="">Degree Type</option>
-            <option>Degree</option>
-            <option>Masters</option>
-            <option>PhD</option>
-        </select>
-
-        <select id="inMod">
-            <option value="">Modality</option>
-            <option>Regular</option>
-            <option>Summer</option>
-            <option>Weekend</option>
-        </select>
-
-        <input type="date" id="inDate">
-
-        <button style="margin-top:15px;" onclick="saveNewReq()">
-            Save Student
-        </button>
-
-    </div>
-
-    <!-- TABLE -->
-
-    <div class="card">
-
-        <h3>Requests</h3>
-
-        <table>
-
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Department</th>
-                    <th>Degree</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-
-            <tbody id="dashTable"></tbody>
-
-        </table>
+                <tbody id="dashTable"></tbody>
+            </table>
+        </div>
 
     </div>
-
 </div>
-
-<!-- FIREBASE -->
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 
 import {
   getAuth,
@@ -192,13 +154,8 @@ import {
   collection,
   getDocs,
   addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-/* FIREBASE CONFIG */
 
 const firebaseConfig = {
   apiKey: "AIzaSyDLFipN6v4UCa4D429-J7N4BidGgPXSazY",
@@ -209,35 +166,15 @@ const firebaseConfig = {
   appId: "1:335596409610:web:01367dd58f9dcb64bb20f3"
 };
 
-/* INIT */
-
 const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
 
 const db = getFirestore(app);
 
-/* STATE */
-
-let config = {
-    services: [],
-    roles: [],
-    rooms: []
-};
-
-let users = [];
-
 let reqs = [];
 
-let currentUser = null;
-
-let tmpS = [];
-
-let tmpR = [];
-
-/* LOGIN */
-
-window.doLogin = async ()=>{
+window.doLogin = async function(){
 
     const email = document.getElementById('lUser').value;
 
@@ -250,136 +187,89 @@ window.doLogin = async ()=>{
     }catch(e){
 
         alert(e.message);
+
     }
+
 };
 
-/* LOGOUT */
-
-window.logout = ()=>{
+window.logout = function(){
 
     signOut(auth);
+
 };
 
-/* AUTH STATE */
-
-onAuthStateChanged(auth, async(user)=>{
+onAuthStateChanged(auth,(user)=>{
 
     if(user){
 
         document.getElementById('loginScreen').style.display='none';
 
-        const snap = await getDocs(collection(db,"users"));
+        document.getElementById('mainApp').style.display='block';
 
-        users = snap.docs.map(d=>({
-            id:d.id,
-            ...d.data()
-        }));
-
-        currentUser = users.find(u=>u.email===user.email);
-
-        if(!currentUser){
-
-            alert("User not registered in Firestore");
-
-            return;
-        }
-
-        loadAll();
+        loadRequests();
 
     }else{
 
-        document.getElementById('loginScreen').style.display='flex';
+        document.getElementById('loginScreen').style.display='block';
+
+        document.getElementById('mainApp').style.display='none';
+
     }
+
 });
 
-/* LOAD */
-
-async function loadAll(){
-
-    const cfg = await getDocs(collection(db,"config"));
-
-    config = cfg.docs[0]?.data() || config;
+async function loadRequests(){
 
     onSnapshot(collection(db,"requests"),(snap)=>{
 
-        reqs = snap.docs.map(d=>({
-            id:d.id,
-            ...d.data()
-        }));
+        reqs = snap.docs.map(doc=>doc.data());
 
         render();
+
     });
+
 }
 
-/* SAVE REQUEST */
+window.saveNewReq = async function(){
 
-window.saveNewReq = async ()=>{
+    const name = document.getElementById('inName').value;
 
-    const n = document.getElementById('inName').value;
-
-    if(!n){
+    if(!name){
 
         alert("Enter name");
 
         return;
+
     }
 
     await addDoc(collection(db,"requests"),{
 
-        name:n,
-
+        name:name,
         dept:document.getElementById('inDept').value,
-
         deg:document.getElementById('inDeg').value,
-
         mod:document.getElementById('inMod').value,
-
         date:document.getElementById('inDate').value,
-
-        step:"Pending"
+        step:"Registered"
 
     });
 
     alert("Saved");
+
 };
-
-/* DELETE */
-
-window.delReq = async(i)=>{
-
-    if(confirm("Delete?")){
-
-        await deleteDoc(doc(db,"requests",reqs[i].id));
-    }
-};
-
-/* RENDER */
 
 function render(){
 
-    document.getElementById('dashTable').innerHTML = reqs.map((r,i)=>`
+    document.getElementById('dashTable').innerHTML = reqs.map(r=>`
 
-        <tr class="${r.step==='COMPLETE'?'row-complete':''}">
-
-            <td>${r.name || ''}</td>
-
-            <td>${r.dept || ''}</td>
-
-            <td>${r.deg || ''}</td>
-
-            <td>${r.step || ''}</td>
-
-            <td>
-
-                <button onclick="delReq(${i})">
-                    Delete
-                </button>
-
-            </td>
-
+        <tr>
+            <td>${r.name}</td>
+            <td>${r.dept}</td>
+            <td>${r.deg}</td>
+            <td>${r.step}</td>
         </tr>
 
     `).join('');
+
 }
 
 </script>
