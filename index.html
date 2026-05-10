@@ -1,268 +1,281 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>HU Registrar Firebase</title>
+<title>HU Registrar Full Workflow Firebase + Roles</title>
 
 <style>
-body{
-    margin:0;
-    font-family:Arial;
-    background:#f4f6f9;
+:root{
+  --primary:#2c3e50;
+  --accent:#3498db;
+  --bg:#f4f6f9;
+  --sidebar:#1a252f;
+  --success:#27ae60;
+  --danger:#e74c3c;
 }
+
+body{
+  margin:0;
+  font-family:Arial;
+  background:var(--bg);
+  display:flex;
+  height:100vh;
+}
+
+.sidebar{
+  width:240px;
+  background:var(--sidebar);
+  color:white;
+  display:flex;
+  flex-direction:column;
+}
+
+.brand{
+  padding:18px;
+  font-weight:bold;
+  color:var(--accent);
+  border-bottom:1px solid rgba(255,255,255,0.1);
+}
+
+.nav{
+  padding:14px;
+  cursor:pointer;
+  color:#aaa;
+}
+
+.nav:hover{color:white;background:rgba(255,255,255,0.05)}
+
+.main{flex:1;display:flex;flex-direction:column;}
 
 .header{
-    background:#2c3e50;
-    color:white;
-    padding:15px;
-    font-size:24px;
+  background:white;
+  padding:12px 18px;
+  display:flex;
+  justify-content:space-between;
+  border-bottom:1px solid #ddd;
 }
 
-.container{ padding:20px; }
+.content{padding:20px;overflow:auto;}
 
 .card{
-    background:white;
-    padding:20px;
-    border-radius:10px;
-    margin-bottom:20px;
-    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+  background:white;
+  padding:18px;
+  border-radius:10px;
+  margin-bottom:15px;
+  box-shadow:0 2px 5px rgba(0,0,0,0.1);
 }
 
-input,select{
-    width:100%;
-    padding:10px;
-    margin-top:10px;
-    border:1px solid #ccc;
-    border-radius:5px;
-    box-sizing:border-box;
-}
+input,select{width:100%;padding:10px;margin-top:8px;}
+button{padding:10px;background:var(--accent);color:white;border:none;cursor:pointer;margin-top:10px;}
 
-button{
-    padding:10px 15px;
-    background:#3498db;
-    color:white;
-    border:none;
-    border-radius:5px;
-    cursor:pointer;
-    margin-top:10px;
-}
+table{width:100%;border-collapse:collapse;}
+th,td{padding:10px;border-bottom:1px solid #eee;font-size:14px;}
 
-button:hover{ opacity:0.9; }
-
-table{
-    width:100%;
-    border-collapse:collapse;
-}
-
-th,td{
-    padding:10px;
-    border-bottom:1px solid #ddd;
-    text-align:left;
-}
-
-#mainApp{ display:none; }
-
-.login-box{
-    width:350px;
-    margin:auto;
-    margin-top:100px;
-}
+#mainApp{display:none;}
 </style>
 </head>
-
 <body>
 
 <!-- LOGIN -->
-<div id="loginScreen">
-    <div class="login-box card">
-        <h2>HU Registrar Login</h2>
-
-        <input type="email" id="lUser" placeholder="Email">
-        <input type="password" id="lPass" placeholder="Password">
-
-        <button onclick="doLogin()">Login</button>
-    </div>
+<div id="loginScreen" style="width:100%;display:flex;align-items:center;justify-content:center;">
+  <div class="card" style="width:320px;">
+    <h3>Login</h3>
+    <input id="email" placeholder="Email">
+    <input id="pass" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+  </div>
 </div>
 
-<!-- MAIN APP -->
-<div id="mainApp">
+<!-- APP -->
+<div id="mainApp" style="width:100%;display:flex;">
 
-    <div class="header">
-        HU Registrar System
-        <button onclick="logout()" style="float:right;background:red;">
-            Logout
-        </button>
-    </div>
-
-    <div class="container">
-
-        <!-- REGISTER -->
-        <div class="card">
-            <h3>Register Student</h3>
-
-            <input type="text" id="inName" placeholder="Student Name">
-            <input type="text" id="inDept" placeholder="Department">
-
-            <select id="inDeg">
-                <option>Degree</option>
-                <option>Masters</option>
-                <option>PhD</option>
-            </select>
-
-            <select id="inMod">
-                <option>Regular</option>
-                <option>Summer</option>
-                <option>Weekend</option>
-            </select>
-
-            <input type="date" id="inDate">
-
-            <button onclick="saveNewReq()">Save Student</button>
-        </div>
-
-        <!-- TABLE -->
-        <div class="card">
-            <h3>Student Requests</h3>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Department</th>
-                        <th>Degree</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody id="dashTable"></tbody>
-            </table>
-        </div>
-
-    </div>
+<div class="sidebar">
+  <div class="brand">HU Registrar</div>
+  <div class="nav" onclick="show('dash')">Dashboard</div>
+  <div class="nav" onclick="show('reg')">Register</div>
 </div>
 
-<!-- FIREBASE -->
+<div class="main">
+
+<div class="header">
+  <div>Full Workflow + Roles</div>
+  <div id="roleBox"></div>
+  <button onclick="logout()">Logout</button>
+</div>
+
+<div class="content">
+
+<div id="dash">
+<div class="card">
+<h3>Students Workflow</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Dept</th>
+<th>Degree</th>
+<th>Step</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="tbl"></tbody>
+</table>
+</div>
+</div>
+
+<div id="reg" style="display:none;">
+<div class="card">
+<h3>Register Student</h3>
+<input id="name" placeholder="Name">
+<input id="dept" placeholder="Dept">
+<select id="deg">
+<option>Degree</option>
+<option>Masters</option>
+<option>PhD</option>
+</select>
+<button onclick="addStudent()">Save</button>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import {
-    getAuth,
-    signInWithEmailAndPassword,
-    onAuthStateChanged,
-    signOut
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-import {
-    getFirestore,
-    collection,
-    addDoc,
-    onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDLFipN6v4UCa4D429-J7N4BidGgPXSazY",
-    authDomain: "hu-registrar-a915c.firebaseapp.com",
-    projectId: "hu-registrar-a915c",
-    storageBucket: "hu-registrar-a915c.appspot.com",
-    messagingSenderId: "335596409610",
-    appId: "1:335596409610:web:01367dd58f9dcb64bb20f3"
+  apiKey:"YOUR_KEY",
+  authDomain:"YOUR_DOMAIN",
+  projectId:"YOUR_PROJECT",
+  appId:"YOUR_APP"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-let reqs = [];
+let students=[];
+let currentUserRole="Guest";
 
 /* LOGIN */
-window.doLogin = async function () {
-    const email = document.getElementById("lUser").value;
-    const pass = document.getElementById("lPass").value;
-
-    try {
-        await signInWithEmailAndPassword(auth, email, pass);
-    } catch (error) {
-        console.log(error.code, error.message);
-        alert(error.message);
-    }
-};
-
-/* LOGOUT */
-window.logout = function () {
-    signOut(auth);
-};
-
-/* AUTH STATE (FIXED) */
-document.addEventListener("DOMContentLoaded", () => {
-
-    onAuthStateChanged(auth, (user) => {
-
-        const loginScreen = document.getElementById("loginScreen");
-        const mainApp = document.getElementById("mainApp");
-
-        if (!loginScreen || !mainApp) {
-            console.error("Missing HTML elements");
-            return;
-        }
-
-        if (user) {
-            loginScreen.style.display = "none";
-            mainApp.style.display = "block";
-            loadRequests();
-        } else {
-            loginScreen.style.display = "block";
-            mainApp.style.display = "none";
-        }
-    });
-
-});
-
-/* LOAD DATA */
-function loadRequests() {
-    onSnapshot(collection(db, "requests"), (snapshot) => {
-        reqs = snapshot.docs.map(doc => doc.data());
-        render();
-    });
+window.login = async ()=>{
+  try{
+    await signInWithEmailAndPassword(auth,email.value,pass.value);
+  }catch(e){alert(e.message)}
 }
 
-/* SAVE */
-window.saveNewReq = async function () {
+window.logout=()=>signOut(auth);
 
-    const name = document.getElementById("inName").value;
+/* GET ROLE */
+async function loadRole(uid){
+  const ref = doc(db,"users",uid);
+  const snap = await getDoc(ref);
+  if(snap.exists()){
+    currentUserRole = snap.data().role;
+    roleBox.innerText = "Role: " + currentUserRole;
+  }else{
+    currentUserRole="Guest";
+  }
+}
 
-    if (!name) {
-        alert("Please enter student name");
-        return;
-    }
+onAuthStateChanged(auth,async u=>{
+  if(u){
+    loginScreen.style.display="none";
+    mainApp.style.display="flex";
+    await loadRole(u.uid);
+    load();
+  }else{
+    loginScreen.style.display="flex";
+    mainApp.style.display="none";
+  }
+});
 
-    await addDoc(collection(db, "requests"), {
-        name,
-        dept: document.getElementById("inDept").value,
-        deg: document.getElementById("inDeg").value,
-        mod: document.getElementById("inMod").value,
-        date: document.getElementById("inDate").value,
-        step: "Registered"
-    });
+/* ADD */
+window.addStudent = async ()=>{
+  await addDoc(collection(db,"students"),{
+    name:name.value,
+    dept:dept.value,
+    deg:deg.value,
+    step:"Registered"
+  });
+}
 
-    alert("Student Saved");
-};
+/* LOAD */
+function load(){
+  onSnapshot(collection(db,"students"),snap=>{
+    students=snap.docs.map(d=>({id:d.id,...d.data()}));
+    render();
+  });
+}
+
+/* ROLE PERMISSIONS */
+function canChange(step){
+  if(currentUserRole==="Admin") return true;
+  if(currentUserRole==="Admission" && step==="Registered") return true;
+  if(currentUserRole==="Finance" && step==="Admission") return true;
+  if(currentUserRole==="Registrar" && step==="Finance") return true;
+  return false;
+}
+
+window.updateStep = async (id,newStep,currentStep)=>{
+  if(!canChange(currentStep)) return alert("Not allowed for your role");
+  const ref = doc(db,"students",id);
+  await updateDoc(ref,{step:newStep});
+}
 
 /* RENDER */
-function render() {
-    document.getElementById("dashTable").innerHTML =
-        reqs.map(r => `
-            <tr>
-                <td>${r.name}</td>
-                <td>${r.dept}</td>
-                <td>${r.deg}</td>
-                <td>${r.step}</td>
-            </tr>
-        `).join("");
+function render(){
+  tbl.innerHTML = students.map(s=>{
+
+    let disabled = !canChange(s.step);
+
+    return `
+    <tr>
+      <td>${s.name}</td>
+      <td>${s.dept}</td>
+      <td>${s.deg}</td>
+      <td>${s.step}</td>
+      <td>
+        <select ${disabled?'disabled':''} onchange="updateStep('${s.id}',this.value,'${s.step}')">
+          <option>Registered</option>
+          <option>Admission</option>
+          <option>Finance</option>
+          <option>Registrar</option>
+          <option>Completed</option>
+        </select>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+window.show=(x)=>{
+  dash.style.display=x==='dash'?'block':'none';
+  reg.style.display=x==='reg'?'block':'none';
 }
 
 </script>
 
 </body>
 </html>
+
+<!-- FIRESTORE RULES (IMPORTANT)
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /students/{id} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
+-->
