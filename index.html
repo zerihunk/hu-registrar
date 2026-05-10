@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>HU Registrar Firebase</title>
 
 <style>
+
 body{
+    margin:0;
     font-family:Arial;
     background:#f4f6f9;
-    margin:0;
-    padding:0;
 }
 
 .header{
@@ -38,6 +40,7 @@ input,select{
     margin-top:10px;
     border:1px solid #ccc;
     border-radius:5px;
+    box-sizing:border-box;
 }
 
 button{
@@ -50,6 +53,10 @@ button{
     margin-top:10px;
 }
 
+button:hover{
+    opacity:0.9;
+}
+
 table{
     width:100%;
     border-collapse:collapse;
@@ -58,84 +65,146 @@ table{
 th,td{
     padding:10px;
     border-bottom:1px solid #ddd;
+    text-align:left;
 }
 
 #mainApp{
     display:none;
 }
+
+.login-box{
+    width:350px;
+    margin:auto;
+    margin-top:100px;
+}
+
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div id="loginScreen" class="container">
-    <div class="card" style="max-width:400px;margin:auto;margin-top:100px;">
+<!-- LOGIN SCREEN -->
+
+<div id="loginScreen">
+
+    <div class="login-box card">
+
         <h2>HU Registrar Login</h2>
 
-        <input type="email" id="lUser" placeholder="Email">
-        <input type="password" id="lPass" placeholder="Password">
+        <input
+            type="email"
+            id="lUser"
+            placeholder="Email"
+        >
 
-        <button onclick="doLogin()">Login</button>
+        <input
+            type="password"
+            id="lPass"
+            placeholder="Password"
+        >
+
+        <button onclick="doLogin()">
+            Login
+        </button>
+
     </div>
+
 </div>
 
-<!-- MAIN APP -->
+<!-- MAIN APPLICATION -->
+
 <div id="mainApp">
 
     <div class="header">
+
         HU Registrar System
-        <button onclick="logout()" style="float:right;background:red;">
+
+        <button
+            onclick="logout()"
+            style="float:right;background:red;"
+        >
             Logout
         </button>
+
     </div>
 
     <div class="container">
 
+        <!-- REGISTER STUDENT -->
+
         <div class="card">
+
             <h3>Register Student</h3>
 
-            <input type="text" id="inName" placeholder="Student Name">
-            <input type="text" id="inDept" placeholder="Department">
+            <input
+                type="text"
+                id="inName"
+                placeholder="Student Name"
+            >
+
+            <input
+                type="text"
+                id="inDept"
+                placeholder="Department"
+            >
 
             <select id="inDeg">
+
                 <option>Degree</option>
                 <option>Masters</option>
                 <option>PhD</option>
+
             </select>
 
             <select id="inMod">
+
                 <option>Regular</option>
                 <option>Summer</option>
                 <option>Weekend</option>
+
             </select>
 
-            <input type="date" id="inDate">
+            <input
+                type="date"
+                id="inDate"
+            >
 
             <button onclick="saveNewReq()">
                 Save Student
             </button>
+
         </div>
 
+        <!-- STUDENTS TABLE -->
+
         <div class="card">
+
             <h3>Student Requests</h3>
 
             <table>
+
                 <thead>
+
                     <tr>
                         <th>Name</th>
                         <th>Department</th>
                         <th>Degree</th>
                         <th>Status</th>
                     </tr>
+
                 </thead>
 
                 <tbody id="dashTable"></tbody>
+
             </table>
+
         </div>
 
     </div>
+
 </div>
+
+<!-- FIREBASE SCRIPT -->
 
 <script type="module">
 
@@ -143,27 +212,35 @@ import { initializeApp }
 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 
 import {
-  getAuth,
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    getAuth,
+    signInWithEmailAndPassword,
+    onAuthStateChanged,
+    signOut
+}
+from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 import {
-  getFirestore,
-  collection,
-  getDocs,
-  addDoc,
-  onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    getFirestore,
+    collection,
+    addDoc,
+    onSnapshot
+}
+from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDLFipN6v4UCa4D429-J7N4BidGgPXSazY",
-  authDomain: "hu-registrar-a915c.firebaseapp.com",
-  projectId: "hu-registrar-a915c",
-  storageBucket: "hu-registrar-a915c.firebasestorage.app",
-  messagingSenderId: "335596409610",
-  appId: "1:335596409610:web:01367dd58f9dcb64bb20f3"
+
+    apiKey: "AIzaSyDLFipN6v4UCa4D429-J7N4BidGgPXSazY",
+
+    authDomain: "hu-registrar-a915c.firebaseapp.com",
+
+    projectId: "hu-registrar-a915c",
+
+    storageBucket: "hu-registrar-a915c.firebasestorage.app",
+
+    messagingSenderId: "335596409610",
+
+    appId: "1:335596409610:web:01367dd58f9dcb64bb20f3"
+
 };
 
 const app = initializeApp(firebaseConfig);
@@ -174,23 +251,33 @@ const db = getFirestore(app);
 
 let reqs = [];
 
+/* LOGIN */
+
 window.doLogin = async function(){
 
-    const email = document.getElementById('lUser').value;
+    const email =
+        document.getElementById("lUser").value;
 
-    const pass = document.getElementById('lPass').value;
+    const pass =
+        document.getElementById("lPass").value;
 
     try{
 
-        await signInWithEmailAndPassword(auth,email,pass);
+        await signInWithEmailAndPassword(
+            auth,
+            email,
+            pass
+        );
 
-    }catch(e){
+    }catch(error){
 
-        alert(e.message);
+        alert(error.message);
 
     }
 
 };
+
+/* LOGOUT */
 
 window.logout = function(){
 
@@ -198,77 +285,111 @@ window.logout = function(){
 
 };
 
+/* AUTH STATE */
+
 onAuthStateChanged(auth,(user)=>{
 
     if(user){
 
-        document.getElementById('loginScreen').style.display='none';
+        document.getElementById("loginScreen")
+            .style.display = "none";
 
-        document.getElementById('mainApp').style.display='block';
+        document.getElementById("mainApp")
+            .style.display = "block";
 
         loadRequests();
 
     }else{
 
-        document.getElementById('loginScreen').style.display='block';
+        document.getElementById("loginScreen")
+            .style.display = "block";
 
-        document.getElementById('mainApp').style.display='none';
+        document.getElementById("mainApp")
+            .style.display = "none";
 
     }
 
 });
 
-async function loadRequests(){
+/* LOAD REQUESTS */
 
-    onSnapshot(collection(db,"requests"),(snap)=>{
+function loadRequests(){
 
-        reqs = snap.docs.map(doc=>doc.data());
+    onSnapshot(
+        collection(db,"requests"),
+        (snapshot)=>{
 
-        render();
+            reqs = snapshot.docs.map(doc=>doc.data());
 
-    });
+            render();
+
+        }
+    );
 
 }
 
+/* SAVE STUDENT */
+
 window.saveNewReq = async function(){
 
-    const name = document.getElementById('inName').value;
+    const name =
+        document.getElementById("inName").value;
 
     if(!name){
 
-        alert("Enter name");
+        alert("Please enter student name");
 
         return;
 
     }
 
-    await addDoc(collection(db,"requests"),{
+    await addDoc(
+        collection(db,"requests"),
+        {
 
-        name:name,
-        dept:document.getElementById('inDept').value,
-        deg:document.getElementById('inDeg').value,
-        mod:document.getElementById('inMod').value,
-        date:document.getElementById('inDate').value,
-        step:"Registered"
+            name:name,
 
-    });
+            dept:
+                document.getElementById("inDept").value,
 
-    alert("Saved");
+            deg:
+                document.getElementById("inDeg").value,
+
+            mod:
+                document.getElementById("inMod").value,
+
+            date:
+                document.getElementById("inDate").value,
+
+            step:"Registered"
+
+        }
+    );
+
+    alert("Student Saved");
 
 };
 
+/* RENDER TABLE */
+
 function render(){
 
-    document.getElementById('dashTable').innerHTML = reqs.map(r=>`
+    document.getElementById("dashTable")
+        .innerHTML = reqs.map(r=>`
 
         <tr>
+
             <td>${r.name}</td>
+
             <td>${r.dept}</td>
+
             <td>${r.deg}</td>
+
             <td>${r.step}</td>
+
         </tr>
 
-    `).join('');
+    `).join("");
 
 }
 
