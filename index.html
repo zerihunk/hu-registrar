@@ -59,7 +59,7 @@
             <h3 id="mName">Update Student</h3>
             <div id="mLog" style="font-size: 0.8rem; background: #eee; padding: 10px; margin-bottom: 15px; border-radius: 5px;"></div>
             
-            <label>Move to Role</label><select id="mRole"></select>
+            <label>Move to Role / Status</label><select id="mRole"></select>
             <label>Move to Office</label><select id="mOffice"></select>
             
             <h4>Services</h4>
@@ -135,7 +135,10 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, getDocs, collection, addDoc, updateDoc, arrayUnion, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, getDocs, getDoc, collection, addDoc, updateDoc, arrayUnion, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        
+        // ማሳሰቢያ፡ ከላይ 'getDoc' ን ከ firestore ላይ ጨምሬያለሁ (ለ openModal የተሻለ አፈጻጸም)
+        import { } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"; 
 
         const firebaseConfig = {
             apiKey: "AIzaSyDLFipN6v4UCa4D429-J7N4BidGgPXSazY",
@@ -154,8 +157,13 @@
         let config = null;
 
         window.handleLogin = async () => {
-            try { await signInWithEmailAndPassword(auth, loginEmail.value, loginPass.value); } catch(e) { alert("Login Failed"); }
+            try { 
+                await signInWithEmailAndPassword(auth, loginEmail.value, loginPass.value); 
+            } catch(e) { 
+                alert("Login Failed. Please check your credentials."); 
+            }
         };
+        
         window.handleLogout = () => signOut(auth);
 
         onAuthStateChanged(auth, user => {
@@ -171,89 +179,170 @@
         });
 
         async function loadData(email) {
+            // የሰራተኛውን ሚና (Role) ማረጋገጫ
             const qU = query(collection(db, "users"), where("email", "==", email));
             const uSnap = await getDocs(qU);
             if (!uSnap.empty) {
-                const role = uSnap.docs[0].data().userRoles[0];
+                const userData = uSnap.docs[0].data();
+                const role = userData.userRoles && userData.userRoles[0] ? userData.userRoles[0] : 'Staff';
                 document.querySelectorAll('.admin-only').forEach(el => el.style.display = role === 'Admin' ? 'block' : 'none');
                 document.querySelectorAll('.staff-only').forEach(el => el.style.display = 'block');
             }
 
+            // የሲስተም ኮንፊግሬሽን በቅጽበት መጫኛ (Real-time Configuration Listener)
             onSnapshot(doc(db, "config", "general"), snap => {
+                if (!snap.exists()) {
+                    console.error("Configuration document does not exist in Firestore!");
+                    return;
+                }
                 config = snap.data();
+                
                 const fill = (id, arr) => {
                     const el = document.getElementById(id);
-                    if(el && arr) el.innerHTML = arr.map(x => `<option value="${x}">${x}</option>`).join('');
+                    if(el && Array.isArray(arr)) {
+                        el.innerHTML = arr.map(x => `<option value="${x}">${x}</option>`).join('');
+                    }
                 };
-                fill('dDept', config.departments);
-                fill('dMod', config.studymodalitys);
-                fill('stRole', config.roles);
-                fill('stRoom', config.rooms);
-                fill('mRole', config.roles);
-                fill('mOffice', config.rooms);
+                
+                // የፊልድ ስሞች ስህተት እንዳይፈጥሩ ጥበቃ ተደርጎላቸዋል (|| [])
+                fill('dDept', config.departments || []);
+                fill('dMod', config.studymodalities || config.studymodalitys || []); // ለሁለቱም ስም አማራጭ
+                fill('stRole', config.roles || []);
+                fill('stRoom', config.rooms || []);
+                fill('mRole', config.roles || []);
+                fill('mOffice', config.rooms || []);
 
-                regSvcList.innerHTML = config.services.map(s => `<label style="display:block"><input type="checkbox" value="${s}" class="r-svc"> ${s}</label>`).join('');
-                sysConfigGrid.innerHTML = [{t:"Dept", d:config.departments}, {t:"Service", d:config.services}].map(s => `<div class="config-box"><h4>${s.t}</h4><ul>${s.d.map(i => `<li>${i}</li>`).join('')}</ul></div>`).join('');
+                const servicesArr = config.services || [];
+                regSvcList.innerHTML = servicesArr.map(s => `<label style="display:block"><input type="checkbox" value="${s}" class="r-svc"> ${s}</label>`).join('');
+                
+                // በ System Config ገጽ ላይ ሁሉንም መረጃዎች ማሳያ
+                sysConfigGrid.innerHTML = [
+                    { t: "Departments", d: config.departments || [] },
+                    { t: "Services", d: servicesArr },
+                    { t: "Roles", d: config.roles || [] },
+                    { t: "Rooms / Offices", d: config.rooms || [] }
+                ].map(s => `<div class="config-box"><h4>${s.t}</h4><ul>${s.d.map(i => `<li>${i}</li>`).join('')}</ul></div>`).join('');
             });
 
+            // የተማሪዎች ዝርዝር በቅጽበት መጫኛ (Real-time Students Listener)
             onSnapshot(query(collection(db, "students"), orderBy("createdAt", "desc")), snap => {
                 const tbody = document.querySelector("#studentTbl tbody");
                 tbody.innerHTML = "";
                 snap.forEach(d => {
                     const s = d.data();
+                    const servicesList = s.services && Array.isArray(s.services) ? s.services.join(', ') : '';
                     tbody.innerHTML += `<tr>
-                        <td class="student-link" onclick="openModal('${d.id}')">${s.name}</td>
-                        <td>${s.department}</td>
+                        <td class="student-link" onclick="openModal('${d.id}')">${s.name || 'No Name'}</td>
+                        <td>${s.department || '-'}</td>
                         <td>${s.currentOffice || 'Admission'}</td>
-                        <td><span class="badge">${s.currentStatus}</span></td>
-                        <td style="font-size:10px">${(s.services || []).join(', ')}</td>
+                        <td><span class="badge">${s.currentStatus || 'Registered'}</span></td>
+                        <td style="font-size:10px">${servicesList}</td>
                     </tr>`;
                 });
             });
         }
 
+        // የአንድን ተማሪ መረጃ ብቻ ለይቶ በ Modal የመክፈቻ ፈንክሽን
         window.openModal = async (id) => {
             selectedId = id;
-            const snap = await getDocs(collection(db, "students"));
-            const s = snap.docs.find(d => d.id === id).data();
-            mName.innerText = s.name;
-            mLog.innerHTML = s.history.map(h => `• ${h.status} (${h.time})`).join('<br>');
-            mServices.innerHTML = config.services.map(svc => `<label style="display:block"><input type="checkbox" value="${svc}" class="m-svc" ${s.services.includes(svc) ? 'checked' : ''}> ${svc}</label>`).join('');
-            updateModal.style.display = 'flex';
+            try {
+                // መላውን collection ከመጫን ይልቅ የተመረጠውን ተማሪ ብቻ በቀጥታ መጥራት
+                const sSnap = await getDoc(doc(db, "students", id));
+                if (!sSnap.exists()) return alert("Student data not found!");
+                
+                const s = sSnap.data();
+                mName.innerText = s.name || "Unknown Student";
+                
+                // ለታሪክ (History) እና አገልግሎቶች (Services) ጥበቃ
+                const historyArr = s.history || [];
+                const studentServices = s.services || [];
+                const configServices = config && config.services ? config.services : [];
+
+                mLog.innerHTML = historyArr.map(h => `• ${h.status || ''} - ${h.office || ''} (${h.time || ''})`).join('<br>');
+                
+                mServices.innerHTML = configServices.map(svc => 
+                    `<label style="display:block">
+                        <input type="checkbox" value="${svc}" class="m-svc" ${studentServices.includes(svc) ? 'checked' : ''}> ${svc}
+                     </label>`
+                ).join('');
+                
+                // የነበሩትን እሴቶች (Values) በ Select ቦክሶቹ ላይ ቀድሞ ማስመረጥ
+                mRole.value = s.currentStatus || "";
+                mOffice.value = s.currentOffice || "";
+                
+                updateModal.style.display = 'flex';
+            } catch(err) {
+                console.error("Error opening modal: ", err);
+            }
         };
 
         window.saveUpdate = async () => {
-            const svcs = Array.from(document.querySelectorAll('.m-svc:checked')).map(e => e.value);
-            await updateDoc(doc(db, "students", selectedId), {
-                currentStatus: mRole.value,
-                currentOffice: mOffice.value,
-                services: svcs,
-                history: arrayUnion({ status: mRole.value, office: mOffice.value, time: new Date().toLocaleString() })
-            });
-            closeModal();
+            try {
+                const svcs = Array.from(document.querySelectorAll('.m-svc:checked')).map(e => e.value);
+                await updateDoc(doc(db, "students", selectedId), {
+                    currentStatus: mRole.value,
+                    currentOffice: mOffice.value,
+                    services: svcs,
+                    history: arrayUnion({ status: mRole.value, office: mOffice.value, time: new Date().toLocaleString() })
+                });
+                closeModal();
+            } catch(err) {
+                alert("Failed to update student data.");
+                console.error(err);
+            }
         };
 
         window.registerStudent = async () => {
-            const svcs = Array.from(document.querySelectorAll('.r-svc:checked')).map(e => e.value);
-            await addDoc(collection(db, "students"), {
-                name: sName.value,
-                department: dDept.value,
-                modality: dMod.value,
-                services: svcs,
-                currentStatus: "Registered",
-                currentOffice: "Admission",
-                createdAt: new Date(),
-                history: [{status: "Registered", time: new Date().toLocaleString()}]
-            });
-            alert("Done");
+            try {
+                const svcs = Array.from(document.querySelectorAll('.r-svc:checked')).map(e => e.value);
+                await addDoc(collection(db, "students"), {
+                    name: sName.value,
+                    department: dDept.value,
+                    modality: dMod.value,
+                    services: svcs,
+                    currentStatus: "Registered",
+                    currentOffice: "Admission",
+                    createdAt: new Date(),
+                    history: [{ status: "Registered", office: "Admission", time: new Date().toLocaleString() }]
+                });
+                alert("Student Registered Successfully!");
+                // ፎርሙን ባዶ ማድረግ
+                sName.value = "";
+                document.querySelectorAll('.r-svc').forEach(cb => cb.checked = false);
+            } catch(err) {
+                alert("Registration failed.");
+                console.error(err);
+            }
+        };
+
+        // አዲስ ሰራተኛ ለመጨመር (Staff Manager)
+        window.addStaff = async () => {
+            try {
+                if(!stName.value || !stEmail.value) return alert("Please fill name and email!");
+                await addDoc(collection(db, "users"), {
+                    name: stName.value,
+                    email: stEmail.value,
+                    userRoles: [stRole.value],
+                    room: stRoom.value
+                });
+                alert("Staff added successfully!");
+                stName.value = "";
+                stEmail.value = "";
+            } catch(err) {
+                alert("Failed to add staff.");
+                console.error(err);
+            }
         };
 
         window.closeModal = () => updateModal.style.display = 'none';
+        
         window.showView = (v, el) => {
             document.querySelectorAll('.view-section').forEach(x => x.classList.remove('active'));
-            document.getElementById(v + 'View').classList.add('active');
+            const targetView = document.getElementById(v + 'View');
+            if(targetView) targetView.classList.add('active');
+            
             document.querySelectorAll('.nav').forEach(n => n.classList.remove('active'));
-            el.classList.add('active');
+            if(el) el.classList.add('active');
         };
     </script>
 </body>
